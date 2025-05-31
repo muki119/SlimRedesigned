@@ -15,7 +15,7 @@ type GroupMessages struct {
 	Reply_To  string `json:"reply_to"` // can be null
 }
 
-func CreateGroupMessageTable() error {
+func CreateGroupMessageTable() {
 	_, err := Config.DatabaseConnection.Prepare(context.Background(), "CreateGroupMessageTable", `
 		CREATE TABLE IF NOT EXISTS group_messages (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,12 +31,14 @@ func CreateGroupMessageTable() error {
 		)
 	`)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	// create index on group_id and timestamp
 	_, err = Config.DatabaseConnection.Prepare(context.Background(), "CreateGroupMessageIndex", `
 		CREATE INDEX IF NOT EXISTS group_messages_group_id_date_sent_index ON group_messages (group_id ASC,date_sent DESC)
 	`)
 
-	return err
+	if err != nil {
+		panic(err)
+	}
 }

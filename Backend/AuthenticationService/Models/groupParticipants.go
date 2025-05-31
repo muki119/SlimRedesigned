@@ -2,7 +2,6 @@ package Models
 
 import (
 	"context"
-	"fmt"
 	"v1/Config"
 )
 
@@ -12,8 +11,8 @@ type GroupParticipants struct {
 	Date_Joined string `json:"date_joined"`
 }
 
-func CreateGroupParticipantTable() error { // Initial function to create the group participants table
-	tableCreation, err := Config.DatabaseConnection.Prepare(context.Background(), "CreateGroupParticipantTable", `
+func CreateGroupParticipantTable() { // Initial function to create the group participants table
+	_, err := Config.DatabaseConnection.Prepare(context.Background(), "CreateGroupParticipantTable", `
 		CREATE TABLE IF NOT EXISTS group_participants (
 			user_id UUID NOT NULL,
 			group_id UUID NOT NULL,
@@ -23,6 +22,7 @@ func CreateGroupParticipantTable() error { // Initial function to create the gro
 			FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
 		)
 	`)
-	fmt.Println(tableCreation)
-	return err
+	if err != nil {
+		panic(err)
+	}
 }

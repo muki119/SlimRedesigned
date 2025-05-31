@@ -2,7 +2,6 @@ package Models
 
 import (
 	"context"
-	"fmt"
 	"v1/Config"
 )
 
@@ -15,8 +14,8 @@ type Group struct {
 	Admin        string `json:"admin"`
 }
 
-func CreateGroupTable() error {
-	out, err := Config.DatabaseConnection.Prepare(context.Background(), "CreateGroupTable", `
+func CreateGroupTable() {
+	_, err := Config.DatabaseConnection.Prepare(context.Background(), "CreateGroupTable", `
 		CREATE TABLE IF NOT EXISTS groups (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			name VARCHAR(100) NOT NULL UNIQUE,
@@ -28,7 +27,8 @@ func CreateGroupTable() error {
 			FOREIGN KEY (admin) REFERENCES users(id) ON DELETE NO ACTION
 		)
 	`)
-
-	fmt.Println(out)
-	return err
+	
+	if err != nil {
+		panic(err)
+	}
 }

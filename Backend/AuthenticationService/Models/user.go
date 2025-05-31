@@ -2,7 +2,6 @@ package Models
 
 import (
 	"context"
-	"fmt"
 	"v1/Config"
 )
 
@@ -23,8 +22,8 @@ type UserWithId struct {
 	User
 }
 
-func CreateUserTable() error {
-	out, err := Config.DatabaseConnection.Prepare(context.Background(), "CreateUserTable", `
+func CreateUserTable() {
+	_, err := Config.DatabaseConnection.Prepare(context.Background(), "CreateUserTable", `
 		CREATE TABLE IF NOT EXISTS users (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			forename VARCHAR(60) NOT NULL,
@@ -38,8 +37,9 @@ func CreateUserTable() error {
 			active BOOLEAN NOT NULL DEFAULT TRUE
 		)
 	`)
-	fmt.Println(out)
-	return err
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (u *User) NewUser(forename, surname, username, password, email, dateCreated, lastLogin, role string, active bool) User {

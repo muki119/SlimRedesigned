@@ -1,5 +1,11 @@
 package Models
 
+import (
+	"context"
+	"github.com/jackc/pgx/v5"
+	"v1/Config"
+)
+
 // type ModelErrors struct {
 // 	groupTableError            error
 // 	userTableError             error
@@ -8,12 +14,17 @@ package Models
 // }
 
 func InitialiseModels() {
-	groupTableError := CreateGroupTable()
-	userTableError := CreateUserTable()
-	groupMessageTableError := CreateGroupMessageTable()
-	groupParticipantTableError := CreateGroupParticipantTable()
+	CreateGroupTable()
+	CreateUserTable()
+	CreateGroupMessageTable()
+	CreateGroupParticipantTable()
 
-	if groupTableError != nil || userTableError != nil || groupMessageTableError != nil || groupParticipantTableError != nil {
-		return
-	}
+	batchTableCreation := pgx.Batch{}
+	batchTableCreation.Queue("CreateUserTable")
+	batchTableCreation.Queue("CreateGroupTable")
+	batchTableCreation.Queue("CreateGroupParticipantTable")
+	batchTableCreation.Queue("CreateGroupMessageTable")
+	batchTableCreation.Queue("CreateGroupMessageIndex")
+
+	Config.DatabaseConnection.SendBatch(context.Background(), &batchTableCreation)
 }
