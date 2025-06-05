@@ -5,6 +5,14 @@ import (
 	"net/http"
 )
 
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+type SuccessResponse struct {
+	Message string `json:"message"`
+}
+
 func SendJsonResponse(res http.ResponseWriter, outStruct any, statusCode int) {
 	res.Header().Set("Server", "H26")
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
