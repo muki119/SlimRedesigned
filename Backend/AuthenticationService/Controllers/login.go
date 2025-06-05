@@ -17,7 +17,7 @@ type LoginRequest struct {
 func LoginHandler(res http.ResponseWriter, req *http.Request) error {
 	var loginReq LoginRequest
 	json.NewDecoder(req.Body).Decode(&loginReq)
-	var loginDetails, err = Services.LoginService(loginReq.Username, loginReq.Password) // should return the id and
+	var user, err = Services.LoginService(loginReq.Username, loginReq.Password) // should return the id and
 	if err != nil {
 		if errors.Is(err, Models.UserNotFound) {
 			Helpers.SendJsonResponse(res, &Helpers.ErrorResponse{Error: err.Error()}, http.StatusNotFound)
@@ -26,13 +26,13 @@ func LoginHandler(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 	// make a jwt
-	userJwt, err := Helpers.CreateToken(loginDetails.Id, loginDetails.Username)
+	userToken, err := Helpers.CreateToken(user.Id, user.Username)
 	if err != nil {
 		return err
 	}
 	cookie := &http.Cookie{
 		Name:     "SID",
-		Value:    userJwt,
+		Value:    userToken,
 		HttpOnly: true,
 		Path:     "/",
 		Secure:   false,
