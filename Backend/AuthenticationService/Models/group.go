@@ -1,7 +1,6 @@
 package Models
 
 import (
-	"context"
 	"v1/Config"
 )
 
@@ -15,19 +14,19 @@ type Group struct {
 }
 
 func CreateGroupTable() {
-	_, err := Config.DatabaseConnection.Prepare(context.Background(), "CreateGroupTable", `
+	_, err := Config.DatabaseConnection.Prepare(Config.DatabaseContext, "CreateGroupTable", `
 		CREATE TABLE IF NOT EXISTS groups (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			name VARCHAR(100) NOT NULL UNIQUE,
 			description VARCHAR(255) NOT NULL,
-			date_created TIMESTAMP NOT NULL DEFAULT NOW(),
+			date_created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 			created_by UUID NOT NULL,
 			admin UUID NOT NULL,
 			FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE NO ACTION,
 			FOREIGN KEY (admin) REFERENCES users(id) ON DELETE NO ACTION
 		)
 	`)
-	
+
 	if err != nil {
 		panic(err)
 	}

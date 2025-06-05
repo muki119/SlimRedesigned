@@ -1,9 +1,9 @@
 package Models
 
 import (
-	"context"
-	"github.com/jackc/pgx/v5"
 	"v1/Config"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // type ModelErrors struct {
@@ -26,5 +26,5 @@ func InitialiseModels() {
 	batchTableCreation.Queue("CreateGroupMessageTable")
 	batchTableCreation.Queue("CreateGroupMessageIndex")
 
-	Config.DatabaseConnection.SendBatch(context.Background(), &batchTableCreation)
+	Config.DatabaseConnection.SendBatch(Config.DatabaseContext, &batchTableCreation).Close()
 }

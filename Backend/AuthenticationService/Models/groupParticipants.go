@@ -1,7 +1,6 @@
 package Models
 
 import (
-	"context"
 	"v1/Config"
 )
 
@@ -12,11 +11,11 @@ type GroupParticipants struct {
 }
 
 func CreateGroupParticipantTable() { // Initial function to create the group participants table
-	_, err := Config.DatabaseConnection.Prepare(context.Background(), "CreateGroupParticipantTable", `
+	_, err := Config.DatabaseConnection.Prepare(Config.DatabaseContext, "CreateGroupParticipantTable", `
 		CREATE TABLE IF NOT EXISTS group_participants (
 			user_id UUID NOT NULL,
 			group_id UUID NOT NULL,
-			date_joined TIMESTAMP NOT NULL DEFAULT NOW(),
+			date_joined TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 			PRIMARY KEY (group_id,user_id),
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 			FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE

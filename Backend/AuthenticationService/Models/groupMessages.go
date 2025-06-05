@@ -1,7 +1,6 @@
 package Models
 
 import (
-	"context"
 	"v1/Config"
 )
 
@@ -16,13 +15,13 @@ type GroupMessages struct {
 }
 
 func CreateGroupMessageTable() {
-	_, err := Config.DatabaseConnection.Prepare(context.Background(), "CreateGroupMessageTable", `
+	_, err := Config.DatabaseConnection.Prepare(Config.DatabaseContext, "CreateGroupMessageTable", `
 		CREATE TABLE IF NOT EXISTS group_messages (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			group_id UUID NOT NULL,
 			user_id UUID NOT NULL,
 			message TEXT NOT NULL,
-			date_sent TIMESTAMP NOT NULL DEFAULT NOW(),
+			date_sent TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 			image TEXT,
 			reply_to UUID,
 			FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
@@ -34,7 +33,7 @@ func CreateGroupMessageTable() {
 		panic(err)
 	}
 	// create index on group_id and timestamp
-	_, err = Config.DatabaseConnection.Prepare(context.Background(), "CreateGroupMessageIndex", `
+	_, err = Config.DatabaseConnection.Prepare(Config.DatabaseContext, "CreateGroupMessageIndex", `
 		CREATE INDEX IF NOT EXISTS group_messages_group_id_date_sent_index ON group_messages (group_id ASC,date_sent DESC)
 	`)
 

@@ -2,8 +2,10 @@ package Controllers
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
+	"v1/Helpers"
+	"v1/Models"
 	"v1/Services"
 )
 
@@ -15,14 +17,27 @@ type LoginRequest struct {
 func LoginHandler(res http.ResponseWriter, req *http.Request) error {
 	var loginReq LoginRequest
 	json.NewDecoder(req.Body).Decode(&loginReq)
-	_, err := Services.LoginService()
+	var loginDetails, err = Services.LoginService(loginReq.Username, loginReq.Password) // should return the id and
+	if err != nil {
+		if errors.Is(err, Models.UserNotFound) {
+			Helpers.SendJsonResponse(res, &Helpers.ErrorResponse{Error: err.Error()}, http.StatusNotFound)
+			return nil
+		}
+		return err
+	}
+	// make a jwt
+	userJwt, err := Helpers.CreateToken(loginDetails.Id, loginDetails.Username)
 	if err != nil {
 		return err
 	}
-	// create a jwt with the rsa private key - only real thing that should be in there is the users Id
-	// send the jwt only
-
-	fmt.Printf("Username: %s, Password: %s\n", loginReq.Username, loginReq.Password)
-	// Services.LoginService()
+	cookie := &http.Cookie{
+		Name:     "SID",
+		Value:    userJwt,
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	}
+	Helpers.SendCookieResponse(res, cookie, &Helpers.SuccessResponse{Message: "Successfully logged in"}, http.StatusOK)
 	return nil
 }

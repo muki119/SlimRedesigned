@@ -2,28 +2,50 @@ package Models
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"time"
 	"v1/Config"
 )
 
+//base user with names , username, email,password and role for the basic creations because dont need to set active , date created and last login
+
 type User struct {
-	Forename     string `json:"forename"`
-	Surname      string `json:"surname"`
-	Username     string `json:"username"`
-	Password     string `json:"password"`
-	Email        string `json:"email"`
-	Date_Created string `json:"date_created"`
-	Last_Login   string `json:"last_login"`
-	Role         string `json:"role"`   // e.g., "admin", "user", etc.
-	Active       bool   `json:"active"` // Indicates if the user account is active
+	Id          string `json:"id" db:"id"`
+	Forename    string `json:"forename" db:"forename"`
+	Surname     string `json:"surname"  db:"surname"`
+	Username    string `json:"username"   db:"username"`
+	Email       string `json:"email" db:"email"`
+	Password    string `json:"password"  db:"password"`
+	DateOfBirth string `json:"date_of_birth" db:"date_of_birth"`
+	Role        string `json:"role"   db:"role"`
+	DateCreated string `json:"date_created" db:"date_created"`
+	LastLogin   string `json:"last_login" db:"last_login"`
+	Active      bool   `json:"active"  db:"active"`
 }
 
-type UserWithId struct {
-	Id string `json:"id"` // Unique identifier for the user
-	User
+type UserExistsError struct {
+	Field   string `json:"field"`
+	Message string `json:"error"`
+}
+
+var UserNotFound = errors.New("user not found")
+
+var UserExistsErrorPtr *UserExistsError
+
+func (err UserExistsError) Error() string {
+	return err.Message
 }
 
 func CreateUserTable() {
-	_, err := Config.DatabaseConnection.Prepare(context.Background(), "CreateUserTable", `
+	//_, err := Config.DatabaseConnection.Exec(context.Background(), `
+	//	DROP TYPE IF EXISTS USER_ROLE_TYPE;
+	//	CREATE TYPE USER_ROLE_TYPE AS ENUM ('USER','ADMIN');
+	//`)
+	//if err != nil {
+	//	panic(err)
+	//}
+	_, err := Config.DatabaseConnection.Prepare(Config.DatabaseContext, "CreateUserTable", `
 		CREATE TABLE IF NOT EXISTS users (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			forename VARCHAR(60) NOT NULL,
@@ -31,38 +53,133 @@ func CreateUserTable() {
 			username VARCHAR(30) NOT NULL UNIQUE,
 			email VARCHAR(320) NOT NULL UNIQUE,
 			password VARCHAR(100) NOT NULL,
-			date_created TIMESTAMP NOT NULL DEFAULT NOW(),
-			last_login TIMESTAMP NOT NULL DEFAULT NOW(),
-			role VARCHAR(20) NOT NULL DEFAULT 'user',
+			date_of_birth DATE NOT NULL,
+			date_created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+			last_login TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+			role USER_ROLE_TYPE NOT NULL DEFAULT 'USER',
 			active BOOLEAN NOT NULL DEFAULT TRUE
-		)
+		);
 	`)
 	if err != nil {
 		panic(err)
 	}
 }
-
-func (u *User) NewUser(forename, surname, username, password, email, dateCreated, lastLogin, role string, active bool) User {
-	return User{
-		Forename:     forename,
-		Surname:      surname,
-		Username:     username,
-		Password:     password,
-		Email:        email,
-		Date_Created: dateCreated,
-		Last_Login:   lastLogin,
-		Role:         role,
-		Active:       active,
+func NewUser() *User {
+	return &User{
+		Role: "USER",
 	}
 }
+
+func NewAdminUser() *User {
+	return &User{
+		Role: "ADMIN",
+	}
+}
+
 func (u *User) SaveUser() error {
-	// Implement the logic to save the user to the database
-	// This is a placeholder function and should be replaced with actual database logic
+	saveUserTransaction, err := Config.DatabaseConnection.Begin(Config.DatabaseContext)
+	if err != nil {
+		return err
+	}
+	dobToDate, _ := time.Parse(time.DateOnly, u.DateOfBirth)
+	_, err = saveUserTransaction.Exec(Config.DatabaseContext, `
+		INSERT INTO users (forename, surname, username, email,password, role,date_of_birth)
+		VALUES ($1, $2, $3, $4, $5, $6,$7)
+	`, u.Forename, u.Surname, u.Username, u.Email, u.Password, u.Role, dobToDate)
+	if err != nil {
+		saveUserTransaction.Rollback(Config.DatabaseContext)
+		return err
+	}
+	saveUserTransaction.Commit(Config.DatabaseContext)
 	return nil
 }
 
-func GetUser(username string) (*UserWithId, error) {
+func (u *User) UserExists() (bool, error) {
+	exists := Config.DatabaseConnection.QueryRow(Config.DatabaseContext, `
+		SELECT username,email FROM users WHERE username=$1 OR email=$2;
+	`, u.Username, u.Email)
+
+	type output struct {
+		Username string `db:"username"`
+		Email    string `db:"email"`
+	}
+	var existingUser output
+
+	err := exists.Scan(&existingUser.Username, &existingUser.Email)
+	if err != nil { // if there was an error
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		} // and the error was because
+		return false, err
+	}
+	if existingUser.Username == u.Username && existingUser.Email == u.Email {
+		return true, &UserExistsError{
+			Field:   "BOTH",
+			Message: "Username and Email already exists",
+		}
+	} else if existingUser.Username == u.Username {
+		return true, &UserExistsError{
+			Field:   "USERNAME",
+			Message: "Username already exists",
+		}
+	} else if existingUser.Email == u.Email {
+		return true, &UserExistsError{
+			Field:   "EMAIL",
+			Message: "email already exists",
+		}
+	}
+	return true, err
+}
+
+func GetUserByUsername(username string) (*User, error) {
 	// Implement the logic to retrieve a user by username from the database
 	// This is a placeholder function and should be replaced with actual database logic
-	return nil, nil
+	userData := Config.DatabaseConnection.QueryRow(context.Background(), `
+		SELECT id, forename, surname, username, email, password,date_of_birth::text, date_created::text, last_login::text, role, active From users WHERE username=$1
+	`, username)
+
+	var foundUserData User
+	err := userData.Scan(&foundUserData.Id,
+		&foundUserData.Forename,
+		&foundUserData.Surname,
+		&foundUserData.Username,
+		&foundUserData.Email,
+		&foundUserData.Password,
+		&foundUserData.DateOfBirth,
+		&foundUserData.DateCreated,
+		&foundUserData.LastLogin,
+		&foundUserData.Role,
+		&foundUserData.Active)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, UserNotFound
+		}
+		return nil, err
+	}
+	return &foundUserData, err
+}
+
+func GetUserByEmail(email string) (*User, error) {
+	userData := Config.DatabaseConnection.QueryRow(context.Background(), `
+		SELECT id, forename, surname, username, email, password, date_created, last_login, role, active From users WHERE email=$1
+	`, email)
+
+	var foundUserData User
+	err := userData.Scan(&foundUserData.Id,
+		&foundUserData.Forename,
+		&foundUserData.Surname,
+		&foundUserData.Username,
+		&foundUserData.Email,
+		&foundUserData.Password,
+		&foundUserData.DateCreated,
+		&foundUserData.LastLogin,
+		&foundUserData.Role,
+		&foundUserData.Active)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, UserNotFound
+		}
+		return nil, err
+	}
+	return &foundUserData, err
 }

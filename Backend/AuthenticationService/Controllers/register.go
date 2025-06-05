@@ -1,21 +1,32 @@
 package Controllers
 
 import (
-	"fmt"
+	"encoding/json"
+	"errors"
+	"log"
 	"net/http"
+	"v1/Helpers"
+	"v1/Models"
+	"v1/Services"
 )
 
-type RegisterController struct {
-	Forename      string
-	Surname       string
-	Username      string
-	Password      string
-	Date_of_birth string
-}
-
 func RegisterHandler(res http.ResponseWriter, req *http.Request) error {
-	fmt.Println("RegisterHandler called")
-	// Services.RegisterService()
-
+	userDetails := Models.NewUser() // stores the user's details to be passed
+	err := json.NewDecoder(req.Body).Decode(&userDetails)
+	if err != nil { // if there's an error decoding
+		log.Println(err)
+		return err
+	}
+	err = Services.RegisterService(userDetails) // will return an error if the user already exists or if there is an issue saving the user
+	if err != nil {                             // if theres an error regestring the user
+		if errors.As(err, &Models.UserExistsErrorPtr) { // and the error comes from
+			var errorOut *Models.UserExistsError
+			errors.As(err, &errorOut)
+			Helpers.SendJsonResponse(res, errorOut, http.StatusBadRequest)
+			return nil
+		}
+		return err
+	}
+	Helpers.SendJsonResponse(res, &Helpers.SuccessResponse{Message: "Successfully registered"}, http.StatusCreated)
 	return nil
 }
