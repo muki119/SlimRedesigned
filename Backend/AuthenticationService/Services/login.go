@@ -1,7 +1,7 @@
 package Services
 
 import (
-	"v1/Helpers"
+	"v1/Helpers/Password"
 	"v1/Models"
 )
 
@@ -16,7 +16,7 @@ func LoginService(username string, password string) (*LoginServiceResponse, erro
 		return nil, err
 	}
 	var validPassword bool
-	validPassword, err = Helpers.ComparePassword(password, userInfo.Password)
+	validPassword, err = Password.ComparePassword(password, userInfo.Password)
 	if !validPassword {
 		return nil, err
 	}

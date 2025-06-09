@@ -1,16 +1,41 @@
-package Helpers
+package Response
 
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
-
 type SuccessResponse struct {
 	Message string `json:"message"`
+}
+type AccessTokenResponse struct {
+	Message string `json:"message"`
+	Token   string `json:"token"`
+}
+
+func NewRefreshTokenCookie(value string) *http.Cookie {
+	return &http.Cookie{
+		Name:     "RefreshToken",
+		HttpOnly: true,
+		Path:     "/",
+		Value:    value,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	}
+}
+
+func ClearCookie(cookieName string) *http.Cookie {
+	return &http.Cookie{
+		Name:     cookieName,
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+	}
 }
 
 func SendJsonResponse(res http.ResponseWriter, outStruct any, statusCode int) {

@@ -1,7 +1,7 @@
 package Services
 
 import (
-	"v1/Helpers"
+	"v1/Helpers/Password"
 	"v1/Models"
 )
 
@@ -13,7 +13,7 @@ func RegisterService(user *Models.User) error { // get user data and create a ne
 	if err != nil {
 		return err
 	}
-	out, err := Helpers.HashPassword(user.Password)
+	out, err := Password.HashPassword(user.Password)
 	user.Password = out
 	if err != nil {
 		return err

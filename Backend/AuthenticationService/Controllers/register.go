@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"v1/Helpers"
+	"v1/Helpers/Response"
 	"v1/Models"
 	"v1/Services"
 )
@@ -22,11 +22,11 @@ func RegisterHandler(res http.ResponseWriter, req *http.Request) error {
 		if errors.As(err, &Models.UserExistsErrorPtr) { // and the error comes from
 			var errorOut *Models.UserExistsError
 			errors.As(err, &errorOut)
-			Helpers.SendJsonResponse(res, errorOut, http.StatusBadRequest)
+			Response.SendJsonResponse(res, errorOut, http.StatusBadRequest)
 			return nil
 		}
 		return err
 	}
-	Helpers.SendJsonResponse(res, &Helpers.SuccessResponse{Message: "Successfully registered"}, http.StatusCreated)
+	Response.SendJsonResponse(res, &Response.SuccessResponse{Message: "Successfully registered"}, http.StatusCreated)
 	return nil
 }

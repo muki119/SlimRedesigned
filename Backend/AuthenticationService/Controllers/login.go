@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"v1/Helpers"
+	"v1/Helpers/Response"
+	"v1/Helpers/Token"
 	"v1/Models"
 	"v1/Services"
 )
@@ -19,25 +20,22 @@ func LoginHandler(res http.ResponseWriter, req *http.Request) error {
 	json.NewDecoder(req.Body).Decode(&loginReq)
 	var user, err = Services.LoginService(loginReq.Username, loginReq.Password) // should return the id and
 	if err != nil {
-		if errors.Is(err, Models.UserNotFound) {
-			Helpers.SendJsonResponse(res, &Helpers.ErrorResponse{Error: err.Error()}, http.StatusNotFound)
+		if errors.Is(err, Models.UserNotFoundError) {
+			Response.SendJsonResponse(res, &Response.ErrorResponse{Error: err.Error()}, http.StatusNotFound)
 			return nil
 		}
 		return err
 	}
-	// make a jwt
-	userToken, err := Helpers.CreateToken(user.Id, user.Username)
+	// make refresh token
+	refreshToken, err := Token.Token.CreateLoginRefreshToken(user.Id)
 	if err != nil {
 		return err
 	}
-	cookie := &http.Cookie{
-		Name:     "SID",
-		Value:    userToken,
-		HttpOnly: true,
-		Path:     "/",
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
+	accessToken, err := Token.Token.CreateAccessToken(user.Id, "/login")
+	if err != nil {
+		return err
 	}
-	Helpers.SendCookieResponse(res, cookie, &Helpers.SuccessResponse{Message: "Successfully logged in"}, http.StatusOK)
+
+	Response.SendCookieResponse(res, Response.NewRefreshTokenCookie(refreshToken), &Response.AccessTokenResponse{Token: accessToken, Message: "successfully logged in"}, http.StatusOK)
 	return nil
 }

@@ -1,4 +1,4 @@
-package Helpers
+package Password
 
 import (
 	"bytes"
