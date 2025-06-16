@@ -20,7 +20,7 @@ func LoginHandler(res http.ResponseWriter, req *http.Request) error {
 	json.NewDecoder(req.Body).Decode(&loginReq)
 	var user, err = Services.LoginService(loginReq.Username, loginReq.Password) // should return the id and
 	if err != nil {
-		if errors.Is(err, Models.UserNotFoundError) {
+		if errors.Is(err, Models.ErrUserNotFound) {
 			Response.SendJsonResponse(res, &Response.ErrorResponse{Error: err.Error()}, http.StatusNotFound)
 			return nil
 		}

@@ -16,13 +16,25 @@ const (
 	keyLength = 32
 )
 
-func HashPassword(password string) (string, error) {
+const (
+	MinimumPasswordLength = 8
+)
+
+var (
+	ErrPasswordMinLength     = fmt.Errorf("password must be at least %d characters", MinimumPasswordLength)
+	ErrInvalidHashedPassword = fmt.Errorf("invalid hashed password")
+)
+
+func HashPassword(plaintextPassword string) (string, error) {
+	if len(plaintextPassword) < MinimumPasswordLength {
+		return "", ErrPasswordMinLength
+	}
 	salt := make([]byte, 16) // the salt to use in bytes
 	_, err := rand.Read(salt)
 	if err != nil {
 		return "", err
 	}
-	passwordInBytes := []byte(password)
+	passwordInBytes := []byte(plaintextPassword)
 	var hashedPassword []byte
 	hashedPassword, err = scrypt.Key(passwordInBytes, salt, n, r, p, keyLength)
 	if err != nil {
@@ -34,13 +46,26 @@ func HashPassword(password string) (string, error) {
 	return saltAndPasswordString, nil
 }
 
-func ComparePassword(password string, hashedPassword string) (bool, error) {
+func ComparePassword(plaintextPassword string, hashedPassword string) (bool, error) {
+
+	if len(plaintextPassword) < MinimumPasswordLength {
+		return false, ErrPasswordMinLength
+	}
+	if len(hashedPassword) < MinimumPasswordLength {
+		return false, ErrInvalidHashedPassword
+	}
 	splitPassword := strings.Split(hashedPassword, "$")
-	saltInBytes, _ := base64.RawStdEncoding.DecodeString(splitPassword[0])
+	saltInBytes, err := base64.RawStdEncoding.DecodeString(splitPassword[0])
+	if err != nil {
+		return false, err
+	}
 
 	var hashedPasswordInBytes []byte
-	hashedPasswordInBytes, _ = base64.RawStdEncoding.DecodeString(splitPassword[1])
-	passwordInBytes := []byte(password)
+	hashedPasswordInBytes, err = base64.RawStdEncoding.DecodeString(splitPassword[1])
+	if err != nil {
+		return false, err
+	}
+	passwordInBytes := []byte(plaintextPassword)
 
 	hashedIncomingPasswordInBytes, err := scrypt.Key(passwordInBytes, saltInBytes, n, r, p, keyLength)
 	if err != nil {

@@ -10,6 +10,9 @@ import (
 func getRSAPrivateKey() (*rsa.PrivateKey, error) {
 	// open pem file and load the private key
 	privateKeyFileDir := os.Getenv("JWT_PRIVATE_KEY")
+	if privateKeyFileDir == "" {
+		return nil, ErrNoPrivateKey
+	}
 	privateKeyFile, err := os.ReadFile(privateKeyFileDir) // pem file
 	if err != nil {
 		return nil, err
@@ -23,6 +26,9 @@ func getRSAPrivateKey() (*rsa.PrivateKey, error) {
 
 func getHMACSymmetricKey() ([]byte, error) {
 	symmetricKey := os.Getenv("JWT_SECRET_KEY")
+	if symmetricKey == "" {
+		return nil, ErrNoSymmetricKey
+	}
 	symmetricKeyBytes, err := base64.StdEncoding.DecodeString(symmetricKey)
 	if err != nil {
 		return nil, err

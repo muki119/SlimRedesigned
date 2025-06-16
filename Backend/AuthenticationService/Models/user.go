@@ -30,10 +30,10 @@ type UserExistsError struct {
 }
 
 var (
-	EmailExistsError    = &UserExistsError{Field: "EMAIL", Message: "email already in use"}
-	UsernameExistsError = &UserExistsError{Field: "USERNAME", Message: "username already in use"}
-	BothExistsError     = &UserExistsError{Field: "BOTH", Message: "username and Email already in use"}
-	UserNotFoundError   = errors.New("user not found")
+	ErrEmailExists    = &UserExistsError{Field: "EMAIL", Message: "email already in use"}
+	ErrUsernameExists = &UserExistsError{Field: "USERNAME", Message: "username already in use"}
+	ErrBothExists     = &UserExistsError{Field: "BOTH", Message: "username and Email already in use"}
+	ErrUserNotFound   = errors.New("user not found")
 )
 
 var UserExistsErrorPtr *UserExistsError
@@ -118,11 +118,11 @@ func (u *User) UserExists() (bool, error) {
 		return false, err
 	}
 	if existingUser.Username == u.Username && existingUser.Email == u.Email {
-		return true, BothExistsError
+		return true, ErrBothExists
 	} else if existingUser.Username == u.Username {
-		return true, UsernameExistsError
+		return true, ErrUsernameExists
 	} else if existingUser.Email == u.Email {
-		return true, EmailExistsError
+		return true, ErrEmailExists
 	}
 	return true, err
 }
@@ -148,7 +148,7 @@ func GetUserByUsername(username string) (*User, error) {
 		&foundUserData.Active)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, UserNotFoundError
+			return nil, ErrUserNotFound
 		}
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func GetUserByEmail(email string) (*User, error) {
 		&foundUserData.Active)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, UserNotFoundError
+			return nil, ErrUserNotFound
 		}
 		return nil, err
 	}

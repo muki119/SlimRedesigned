@@ -6,6 +6,12 @@ import (
 )
 
 func (tokenService *HelperStruct) CreateAccessToken(userId string, issuer string) (string, error) { // access token - to be changed often -- rsa for microservices
+	if userId == "" {
+		return "", ErrNoUserId
+	} else if issuer == "" {
+		return "", ErrNoIssuer
+	}
+
 	audienceClaim := jwt.ClaimStrings{"localhost:5000"}
 	registeredClaims := jwt.RegisteredClaims{
 		Subject:   userId,
