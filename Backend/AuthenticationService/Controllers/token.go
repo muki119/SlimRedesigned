@@ -9,7 +9,7 @@ import (
 
 func TokenHandler(res http.ResponseWriter, req *http.Request) error {
 	// get a refresh token
-	requestRefreshToken, err := req.Cookie("RefreshToken")
+	requestRefreshToken, err := req.Cookie(Response.RefreshTokenName)
 	if err != nil {
 		if errors.Is(err, http.ErrNoCookie) {
 			Response.SendJsonResponse(res, Response.ErrorResponse{Error: "Token Invalid"}, http.StatusUnauthorized)
@@ -17,7 +17,7 @@ func TokenHandler(res http.ResponseWriter, req *http.Request) error {
 		}
 		return err
 	}
-	parsedRefreshToken, err := Token.Token.ParseToken(requestRefreshToken.Value) // check if the jwt is valid
+	parsedRefreshToken, err := Token.Token.ParseRefreshToken(requestRefreshToken.Value) // check if the jwt is valid
 	if err != nil {
 		return err
 	}

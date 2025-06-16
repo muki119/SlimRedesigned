@@ -17,9 +17,11 @@ type AccessTokenResponse struct {
 	Token   string `json:"token"`
 }
 
+const RefreshTokenName = "refresh_token"
+
 func NewRefreshTokenCookie(value string) *http.Cookie {
 	return &http.Cookie{
-		Name:     "RefreshToken",
+		Name:     RefreshTokenName,
 		HttpOnly: true,
 		Path:     "/",
 		Value:    value,
