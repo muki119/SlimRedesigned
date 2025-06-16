@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"v1/Config"
 	"v1/Models"
 	"v1/Routes"
@@ -29,11 +31,25 @@ func main() {
 
 	http.Handle("/api/v1/auth/", http.StripPrefix("/api/v1/auth", Routes.AuthRouter))
 	log.Println("Starting server on port", port)
+
+	idleConnsClosed := make(chan struct{})
+	go func() {
+		sigint := make(chan os.Signal, 1)
+		signal.Notify(sigint, os.Interrupt)
+		<-sigint
+		
+		if err := httpServer.Shutdown(context.Background()); err != nil {
+			log.Printf("HTTP server Shutdown: %v", err)
+		}
+		close(idleConnsClosed)
+	}()
+
 	serverError := httpServer.ListenAndServe()
 	if serverError != nil {
 		log.Fatalf("Error starting server: %v", serverError)
 	} else {
 		log.Default().Println("Server Started Successfully!\n" + "listening on port: " + port)
 	}
+	<-idleConnsClosed
 
 }
