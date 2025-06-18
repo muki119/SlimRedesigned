@@ -1,11 +1,16 @@
 package Middleware
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"v1/Helpers/Response"
 	"v1/Helpers/Token"
 )
+
+type requestTokenContextKey string
+
+var RequestTokenContextKey = requestTokenContextKey("token")
 
 func CheckUserLoggedIn(f func(http.ResponseWriter, *http.Request) error) func(http.ResponseWriter, *http.Request) error {
 	return func(res http.ResponseWriter, req *http.Request) error {
@@ -27,7 +32,8 @@ func CheckUserLoggedIn(f func(http.ResponseWriter, *http.Request) error) func(ht
 			Response.SendCookieResponse(res, Response.ClearCookie(Response.RefreshTokenName), Response.ErrorResponse{Error: "Token Invalid"}, http.StatusUnauthorized)
 			return nil
 		}
-		err = f(res, req)
+		newRequestContext := context.WithValue(req.Context(), RequestTokenContextKey, parsedRefreshToken) // add user id to request context
+		err = f(res, req.WithContext(newRequestContext))                                                  // call the next handler with the new context
 		return err
 	}
 }

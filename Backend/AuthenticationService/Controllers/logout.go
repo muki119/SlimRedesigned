@@ -1,28 +1,21 @@
 package Controllers
 
 import (
-	"errors"
+	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"v1/Helpers/Response"
 	"v1/Helpers/Token"
+	"v1/Middleware"
 )
 
 func LogoutHandler(res http.ResponseWriter, req *http.Request) error {
 	// if refresh token - add to blocked list -- service job
 	// remove refresh token cookie
-	requestRefreshToken, err := req.Cookie(Response.RefreshTokenName)
-	if err != nil {
-		if errors.Is(err, http.ErrNoCookie) { // if no cookie
-			Response.SendJsonResponse(res, Response.ErrorResponse{Error: "Token Invalid"}, http.StatusUnauthorized) // send invalid cookie
-			return nil
-		}
-		return err
+	parsedRefreshToken := req.Context().Value(Middleware.RequestTokenContextKey).(*jwt.Token)
+	if parsedRefreshToken == nil {
+		return ErrNoToken
 	}
-	parsedRefreshToken, err := Token.Token.ParseRefreshToken(requestRefreshToken.Value) // check if the jwt is valid
-	if err != nil {
-		return err
-	}
-	err = Token.Token.BlockToken(parsedRefreshToken) // add parsed token id to blocked list
+	err := Token.Token.BlockToken(parsedRefreshToken) // add parsed token id to blocked list
 	if err != nil {
 		return err
 	}
