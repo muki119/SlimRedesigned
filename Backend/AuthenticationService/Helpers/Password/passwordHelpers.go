@@ -55,6 +55,9 @@ func ComparePassword(plaintextPassword string, hashedPassword string) (bool, err
 		return false, ErrInvalidHashedPassword
 	}
 	splitPassword := strings.Split(hashedPassword, "$")
+	if len(splitPassword) != 2 {
+		return false, ErrInvalidHashedPassword
+	}
 	saltInBytes, err := base64.RawStdEncoding.DecodeString(splitPassword[0])
 	if err != nil {
 		return false, err
