@@ -55,7 +55,7 @@ func TestComparePassword(t *testing.T) {
 		}
 	})
 	t.Run("ReturnsFalseWhenPasswordsAreNotTheSame", func(t *testing.T) {
-		comparedPassword, err := Password.ComparePassword(hashedPassword, plainTextPassword)
+		comparedPassword, err := Password.ComparePassword("invalidpassword", hashedPassword)
 		if err != nil {
 			t.Error(err)
 		}

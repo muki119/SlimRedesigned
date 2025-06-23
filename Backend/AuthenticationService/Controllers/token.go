@@ -2,15 +2,16 @@ package Controllers
 
 import (
 	"errors"
-	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"v1/Helpers/Response"
 	"v1/Helpers/Token"
 	"v1/Middleware"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var (
-	ErrNoToken = errors.New("No token found")
+	ErrNoToken = errors.New("no token found")
 )
 
 func TokenHandler(res http.ResponseWriter, req *http.Request) error {
@@ -39,7 +40,7 @@ func TokenHandler(res http.ResponseWriter, req *http.Request) error {
 	Response.SendCookieResponse(res, Response.NewRefreshTokenCookie(newRefreshToken), Response.AccessTokenResponse{
 		Message: "successfully refreshed",
 		Token:   newAccessToken,
-	}, http.StatusCreated)
+	}, http.StatusOK)
 
 	return nil
 }

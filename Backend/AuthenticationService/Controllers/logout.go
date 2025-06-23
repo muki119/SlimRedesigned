@@ -1,11 +1,12 @@
 package Controllers
 
 import (
-	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"v1/Helpers/Response"
 	"v1/Helpers/Token"
 	"v1/Middleware"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func LogoutHandler(res http.ResponseWriter, req *http.Request) error {
@@ -19,6 +20,6 @@ func LogoutHandler(res http.ResponseWriter, req *http.Request) error {
 	if err != nil {
 		return err
 	}
-	Response.SendCookieResponse(res, Response.ClearCookie(Response.RefreshTokenName), Response.ErrorResponse{Error: "successfully logged out"}, http.StatusNoContent)
+	Response.SendCookieResponse(res, Response.ClearCookie(Response.RefreshTokenName), Response.SuccessResponse{Message: "successfully logged out"}, http.StatusOK)
 	return nil
 }

@@ -1,9 +1,10 @@
 package Models
 
 import (
-	"github.com/jackc/pgx/v5"
 	"log"
 	"v1/Config"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func InitialiseModels() {
