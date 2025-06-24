@@ -74,13 +74,6 @@ func NewUser() *User {
 		Role: "USER",
 	}
 }
-
-func NewAdminUser() *User {
-	return &User{
-		Role: "ADMIN",
-	}
-}
-
 func (u *User) SaveUser() error {
 	saveUserTransaction, err := Config.DatabaseConnection.Begin(Config.DatabaseContext)
 	if err != nil {

@@ -7,20 +7,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func InitialiseModels() {
+func InitialiseModels() { // only dealing with the userModel
 	log.Println("Initialising Models...")
-	CreateGroupTable()
 	CreateUserTable()
-	CreateGroupMessageTable()
-	CreateGroupParticipantTable()
-
 	batchTableCreation := pgx.Batch{}
 	batchTableCreation.Queue("CreateUserTable")
-	batchTableCreation.Queue("CreateGroupTable")
-	batchTableCreation.Queue("CreateGroupParticipantTable")
-	batchTableCreation.Queue("CreateGroupMessageTable")
-	batchTableCreation.Queue("CreateGroupMessageIndex")
-
 	err := Config.DatabaseConnection.SendBatch(Config.DatabaseContext, &batchTableCreation).Close()
 	if err != nil {
 		log.Fatal(err)
