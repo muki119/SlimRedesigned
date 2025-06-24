@@ -22,6 +22,7 @@ var (
 	ErrNoExpiry       = errors.New("no expiry")
 	ErrNoPrivateKey   = errors.New("no private key")
 	ErrNoSymmetricKey = errors.New("no symmetric key")
+	ErrNoTokenId      = errors.New("no token id")
 )
 
 func createTokenService() *HelperStruct {

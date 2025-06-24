@@ -28,7 +28,12 @@ func CheckUserLoggedIn(f func(http.ResponseWriter, *http.Request) error) func(ht
 		if err != nil {
 			return err
 		}
-		if Token.Token.IsBlocklisted(parsedRefreshToken) || !parsedRefreshToken.Valid { // check blocklisted and not valid
+
+		tokenIsBlocked, err := Token.Token.IsBlocklisted(parsedRefreshToken)
+		if err != nil {
+			return err
+		}
+		if tokenIsBlocked || !parsedRefreshToken.Valid { // check blocklisted and not valid
 			Response.SendCookieResponse(res, Response.ClearCookie(Response.RefreshTokenName), Response.ErrorResponse{Error: "Token Invalid"}, http.StatusUnauthorized)
 			return nil
 		}
