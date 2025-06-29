@@ -2,10 +2,11 @@ package Token
 
 import (
 	"errors"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/redis/go-redis/v9"
 	"time"
 	"v1/Config"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -51,7 +52,7 @@ func isBlocklisted(tokenId string) (bool, error) {
 func blockToken(RefreshToken *jwt.Token) error {
 	tokenJti := RefreshToken.Claims.(jwt.MapClaims)["jti"]
 	tokenExpiryDate := RefreshToken.Claims.(jwt.MapClaims)["exp"]
-	ttl := time.Unix(int64(tokenExpiryDate.(float64)), 0).Sub(time.Now())
+	ttl := time.Until(time.Unix(int64(tokenExpiryDate.(float64)), 0))
 	status := Config.RedisConnection.Set(Config.RedisContext, tokenJti.(string), RefreshToken.Raw, ttl)
 	if status.Err() != nil {
 		return status.Err()

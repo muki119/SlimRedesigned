@@ -5,7 +5,7 @@ import (
 	"v1/Models"
 )
 
-func RegisterService(user *Models.User) error { // get user data and create a new user // return only error response
+func (userRepo *Services) RegisterService(user *Models.User) error { // get user data and create a new user // return only error response
 	doesUserExist, err := user.UserExists()
 	if doesUserExist {
 		return err // if user exists - its going to return and error that contains what the matching field is , either email or username

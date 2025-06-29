@@ -6,11 +6,11 @@ import (
 	"v1/Middleware"
 )
 
-var AuthRouter = http.NewServeMux()
-
-func InitialiseRoutes() {
-	AuthRouter.HandleFunc("POST /register", Middleware.ErrorHandler(Controllers.RegisterHandler))
-	AuthRouter.HandleFunc("POST /login", Middleware.ErrorHandler(Controllers.LoginHandler))
-	AuthRouter.HandleFunc("GET /token", Middleware.ErrorHandler(Middleware.CheckUserLoggedIn(Controllers.TokenHandler)))
-	AuthRouter.HandleFunc("DELETE /logout", Middleware.ErrorHandler(Middleware.CheckUserLoggedIn(Controllers.LogoutHandler)))
+func InitialiseRoutes(RouteControllers *Controllers.Controllers) *http.ServeMux {
+	var AuthRouter = http.NewServeMux()
+	AuthRouter.HandleFunc("POST /register", Middleware.ErrorHandler(RouteControllers.RegisterHandler))
+	AuthRouter.HandleFunc("POST /login", Middleware.ErrorHandler(RouteControllers.LoginHandler))
+	AuthRouter.HandleFunc("GET /token", Middleware.ErrorHandler(Middleware.CheckUserLoggedIn(RouteControllers.TokenHandler)))
+	AuthRouter.HandleFunc("DELETE /logout", Middleware.ErrorHandler(Middleware.CheckUserLoggedIn(RouteControllers.LogoutHandler)))
+	return AuthRouter
 }

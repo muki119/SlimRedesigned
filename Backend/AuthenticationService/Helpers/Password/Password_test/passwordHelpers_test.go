@@ -4,12 +4,11 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"testing"
 	"v1/Helpers/Password"
 )
 
-var randomArrayOfStrings = generateRandomArrayOfStrings(20)
+var randomArrayOfStrings = generateRandomArrayOfStrings(1)
 
 func TestHashPassword(t *testing.T) {
 	t.Run("ReturnsHashWhenGivenInput", func(t *testing.T) {
@@ -85,6 +84,28 @@ func TestComparePassword(t *testing.T) {
 
 }
 
+func BenchmarkComparePassword(b *testing.B) {
+	plainTextPassword := randomArrayOfStrings[0]
+	hashedPassword, err := Password.HashPassword(plainTextPassword)
+	if err != nil {
+		b.Error(err)
+	}
+	for b.Loop() {
+		_, err := Password.ComparePassword(plainTextPassword, hashedPassword)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+func BenchmarkHashPassword(b *testing.B) {
+	plainTextPassword := randomArrayOfStrings[0]
+	for b.Loop() {
+		_, err := Password.HashPassword(plainTextPassword)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
 func generateRandomArrayOfStrings(length int) []string {
 	arrOfStrings := make([]string, length)
 	for i := 0; i < length; i++ {
@@ -94,7 +115,6 @@ func generateRandomArrayOfStrings(length int) []string {
 			return nil
 		}
 		arrOfStrings[i] = hex.EncodeToString(randomEightByteString)
-		fmt.Println(arrOfStrings[i])
 	}
 	return arrOfStrings
 }

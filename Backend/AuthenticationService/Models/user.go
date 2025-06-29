@@ -4,11 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
 	"time"
 	"v1/Config"
 )
 
-//base user with names , username, email,password and role for the basic creations because dont need to set active , date created and last login
+// hybrid approach centalised db for production, for testing use other function that takes in
+
+// base user with names , username, email,password and role for the basic creations because dont need to set active , date created and last login
+
+// repository gives out the new user and passes the database the repository will use for it
 
 type User struct {
 	Id          string `json:"id" db:"id"`
@@ -22,6 +29,7 @@ type User struct {
 	DateCreated string `json:"date_created" db:"date_created"`
 	LastLogin   string `json:"last_login" db:"last_login"`
 	Active      bool   `json:"active"  db:"active"`
+	db          *pgxpool.Pool
 }
 
 type UserExistsError struct {
@@ -42,15 +50,8 @@ func (err UserExistsError) Error() string {
 	return err.Message
 }
 
-func CreateUserTable() {
-	//_, err := Config.DatabaseConnection.Exec(context.Background(), `
-	//	DROP TYPE IF EXISTS USER_ROLE_TYPE;
-	//	CREATE TYPE USER_ROLE_TYPE AS ENUM ('USER','ADMIN');
-	//`)
-	//if err != nil {
-	//	panic(err)
-	//}
-	_, err := Config.DatabaseConnection.Prepare(Config.DatabaseContext, "CreateUserTable", `
+func (userRepo *UserRepository) CreateUserTable() error {
+	_, err := userRepo.Db.Exec(Config.DatabaseContext, `
 		CREATE TABLE IF NOT EXISTS users (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			forename VARCHAR(60) NOT NULL,
@@ -61,39 +62,106 @@ func CreateUserTable() {
 			date_of_birth DATE NOT NULL,
 			date_created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 			last_login TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-			role USER_ROLE_TYPE NOT NULL DEFAULT 'USER',
+			role VARCHAR(30) NOT NULL DEFAULT 'USER' CHECK (UPPER(role) IN ('USER','ADMIN')),
 			active BOOLEAN NOT NULL DEFAULT TRUE
 		);
 	`)
 	if err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
-func NewUser() *User {
+
+//func NewUser() *User {
+//	return &User{
+//		Role: "USER",
+//	}
+//}
+
+func (userRepo *UserRepository) NewUser() *User {
 	return &User{
 		Role: "USER",
+		db:   userRepo.Db,
 	}
 }
-func (u *User) SaveUser() error {
-	saveUserTransaction, err := Config.DatabaseConnection.Begin(Config.DatabaseContext)
+
+func (u *User) SaveUser() error { // save user to database but if theres an issue roll back
+
+	userDateOfBirth, err := time.Parse(time.RFC3339, u.DateOfBirth)
 	if err != nil {
 		return err
 	}
-	dobToDate, _ := time.Parse(time.DateOnly, u.DateOfBirth)
-	_, err = saveUserTransaction.Exec(Config.DatabaseContext, `
+	saveUserTx, err := u.db.Begin(Config.DatabaseContext)
+
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			err := saveUserTx.Rollback(Config.DatabaseContext)
+			if err != nil {
+				return
+			}
+		}
+		if err != nil {
+			err := saveUserTx.Rollback(Config.DatabaseContext)
+			if err != nil {
+				fmt.Println("error rolling back.", err)
+				return
+			}
+		}
+	}()
+	_, err = saveUserTx.Exec(Config.DatabaseContext, `
 		INSERT INTO users (forename, surname, username, email,password, role,date_of_birth)
 		VALUES ($1, $2, $3, $4, $5, $6,$7)
-	`, u.Forename, u.Surname, u.Username, u.Email, u.Password, u.Role, dobToDate)
+	`, u.Forename, u.Surname, u.Username, u.Email, u.Password, u.Role, userDateOfBirth)
 	if err != nil {
-		saveUserTransaction.Rollback(Config.DatabaseContext)
 		return err
 	}
-	saveUserTransaction.Commit(Config.DatabaseContext)
+
+	err = saveUserTx.Commit(Config.DatabaseContext)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *User) Delete() error {
+	if u.Id == "" {
+		return ErrUserNotFound
+	}
+	deleteUserTx, err := u.db.Begin(Config.DatabaseContext)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			err := deleteUserTx.Rollback(Config.DatabaseContext)
+			log.Println("Rolling back")
+			if err != nil {
+				return
+			}
+		}
+		if err != nil {
+			err := deleteUserTx.Rollback(Config.DatabaseContext)
+			if err != nil {
+				return
+			}
+		}
+	}()
+	_, err = deleteUserTx.Exec(Config.DatabaseContext, `
+		DELETE FROM users WHERE id = $1
+	`, u.Id)
+
+	err = deleteUserTx.Commit(Config.DatabaseContext)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (u *User) UserExists() (bool, error) {
-	exists := Config.DatabaseConnection.QueryRow(Config.DatabaseContext, `
+	exists := u.db.QueryRow(Config.DatabaseContext, `
 		SELECT username,email FROM users WHERE username=$1 OR email=$2;
 	`, u.Username, u.Email)
 
@@ -120,14 +188,14 @@ func (u *User) UserExists() (bool, error) {
 	return true, err
 }
 
-func GetUserByUsername(username string) (*User, error) {
+func (userRepo *UserRepository) GetUserByUsername(username string) (*User, error) {
 	// Implement the logic to retrieve a user by username from the database
 	// This is a placeholder function and should be replaced with actual database logic
-	userData := Config.DatabaseConnection.QueryRow(context.Background(), `
+	userData := userRepo.Db.QueryRow(context.Background(), `
 		SELECT id, forename, surname, username, email, password,date_of_birth::text, date_created::text, last_login::text, role, active From users WHERE username=$1
 	`, username)
 
-	var foundUserData User
+	var foundUserData = userRepo.NewUser()
 	err := userData.Scan(&foundUserData.Id,
 		&foundUserData.Forename,
 		&foundUserData.Surname,
@@ -145,15 +213,15 @@ func GetUserByUsername(username string) (*User, error) {
 		}
 		return nil, err
 	}
-	return &foundUserData, err
+	return foundUserData, err
 }
 
-func GetUserByEmail(email string) (*User, error) {
-	userData := Config.DatabaseConnection.QueryRow(context.Background(), `
+func (userRepo *UserRepository) GetUserByEmail(email string) (*User, error) {
+	userData := userRepo.Db.QueryRow(context.Background(), `
 		SELECT id, forename, surname, username, email, password, date_created, last_login, role, active From users WHERE email=$1
 	`, email)
 
-	var foundUserData User
+	var foundUserData = userRepo.NewUser()
 	err := userData.Scan(&foundUserData.Id,
 		&foundUserData.Forename,
 		&foundUserData.Surname,
@@ -170,5 +238,5 @@ func GetUserByEmail(email string) (*User, error) {
 		}
 		return nil, err
 	}
-	return &foundUserData, err
+	return foundUserData, err
 }

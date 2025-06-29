@@ -2,7 +2,6 @@ package Services
 
 import (
 	"v1/Helpers/Password"
-	"v1/Models"
 )
 
 type LoginServiceResponse struct {
@@ -10,8 +9,8 @@ type LoginServiceResponse struct {
 	Username string `json:"username"`
 }
 
-func LoginService(username string, password string) (*LoginServiceResponse, error) { // logs in a user and return their id and username for jwt creation
-	userInfo, err := Models.GetUserByUsername(username)
+func (userRepo *Services) LoginService(username string, password string) (*LoginServiceResponse, error) { // logs in a user and return their id and username for jwt creation
+	userInfo, err := userRepo.UserRepository.GetUserByUsername(username)
 	if err != nil {
 		return nil, err
 	}

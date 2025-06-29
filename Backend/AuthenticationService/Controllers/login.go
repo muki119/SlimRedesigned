@@ -7,7 +7,6 @@ import (
 	"v1/Helpers/Response"
 	"v1/Helpers/Token"
 	"v1/Models"
-	"v1/Services"
 )
 
 type LoginRequest struct {
@@ -15,10 +14,13 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-func LoginHandler(res http.ResponseWriter, req *http.Request) error {
+func (controllers *Controllers) LoginHandler(res http.ResponseWriter, req *http.Request) error {
 	var loginReq LoginRequest
-	json.NewDecoder(req.Body).Decode(&loginReq)
-	var user, err = Services.LoginService(loginReq.Username, loginReq.Password) // should return the id and
+	err := json.NewDecoder(req.Body).Decode(&loginReq)
+	if err != nil {
+		return err
+	}
+	user, err := controllers.UserServices.LoginService(loginReq.Username, loginReq.Password) // should return the id and
 	if err != nil {
 		if errors.Is(err, Models.ErrUserNotFound) {
 			Response.SendJsonResponse(res, &Response.ErrorResponse{Error: err.Error()}, http.StatusNotFound)

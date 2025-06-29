@@ -9,7 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func LogoutHandler(res http.ResponseWriter, req *http.Request) error {
+func (controllers *Controllers) LogoutHandler(res http.ResponseWriter, req *http.Request) error {
 	// if refresh token - add to blocked list -- service job
 	// remove refresh token cookie
 	parsedRefreshToken := req.Context().Value(Middleware.RequestTokenContextKey).(*jwt.Token)
