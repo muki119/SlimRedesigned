@@ -18,6 +18,9 @@ type PGDatabase struct {
 	User string
 	Name string
 }
+type PGDatabaseInterface interface {
+	ConnectToDatabase() (*pgxpool.Pool, error)
+}
 
 func (db *PGDatabase) ConnectToDatabase() (*pgxpool.Pool, error) {
 
