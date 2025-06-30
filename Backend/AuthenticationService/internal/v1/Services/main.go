@@ -3,7 +3,7 @@ package Services
 import "v1/Models"
 
 type Services struct {
-	UserRepository Models.UserRepository
+	UserRepository *Models.UserRepository
 }
 
 type servicesInterface interface {
