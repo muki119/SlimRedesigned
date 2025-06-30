@@ -7,6 +7,7 @@ import (
 	"v1/Helpers/Response"
 	"v1/Helpers/Token"
 	"v1/Models"
+	"v1/Services"
 )
 
 type LoginRequest struct {
@@ -24,6 +25,10 @@ func (controllers *Controllers) LoginHandler(res http.ResponseWriter, req *http.
 	if err != nil {
 		if errors.Is(err, Models.ErrUserNotFound) {
 			Response.SendJsonResponse(res, &Response.ErrorResponse{Error: err.Error()}, http.StatusNotFound)
+			return nil
+		}
+		if errors.Is(err, Services.ErrInvalidCredentials) {
+			Response.SendJsonResponse(res, &Response.ErrorResponse{Error: err.Error()}, http.StatusUnauthorized)
 			return nil
 		}
 		return err
