@@ -129,5 +129,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .idea
-Certificates
 .DS_Store
+Backend/AuthenticationService/internal/.env
+
