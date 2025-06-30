@@ -4,9 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"log"
+	"log/slog"
 	"time"
 	"v1/Config"
 )
@@ -98,15 +97,18 @@ func (u *User) SaveUser() error { // save user to database but if theres an issu
 	}
 	defer func() {
 		if p := recover(); p != nil {
+			slog.Info("Rolling back save transaction", "error", p)
 			err := saveUserTx.Rollback(Config.DatabaseContext)
 			if err != nil {
+				slog.Error("error rolling back.", "error", err.Error())
 				return
 			}
 		}
 		if err != nil {
+			slog.Info("Rolling back save transaction", "error", err.Error())
 			err := saveUserTx.Rollback(Config.DatabaseContext)
 			if err != nil {
-				fmt.Println("error rolling back.", err)
+				slog.Error("error rolling back.", "error", err.Error())
 				return
 			}
 		}
@@ -137,12 +139,14 @@ func (u *User) Delete() error {
 	defer func() {
 		if p := recover(); p != nil {
 			err := deleteUserTx.Rollback(Config.DatabaseContext)
-			log.Println("Rolling back")
+			slog.Info("Rolling back delete transaction", "error", p)
 			if err != nil {
+				slog.Error("error rolling back.", "error", err.Error())
 				return
 			}
 		}
 		if err != nil {
+			slog.Info("Rolling back delete transaction", "error", err.Error())
 			err := deleteUserTx.Rollback(Config.DatabaseContext)
 			if err != nil {
 				return

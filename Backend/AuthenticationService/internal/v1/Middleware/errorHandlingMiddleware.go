@@ -1,7 +1,7 @@
 package Middleware
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"v1/Helpers/Response"
 )
@@ -11,7 +11,7 @@ func ErrorHandler(fn func(http.ResponseWriter, *http.Request) error) http.Handle
 		err := fn(res, req)
 		if err != nil {
 			// send a 500 status with a error json response
-			log.Println(err)
+			slog.Error(err.Error())
 			Response.SendJsonResponse(res, &Response.ErrorResponse{Error: "internal server error"}, http.StatusInternalServerError)
 		}
 	}

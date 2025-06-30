@@ -1,8 +1,8 @@
 package Models
 
 import (
-	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log/slog"
 )
 
 type UserRepository struct {
@@ -18,7 +18,7 @@ type UserRepositoryInterface interface {
 func (userRepo *UserRepository) InitialiseModels() { // only dealing with the userModel
 	err := userRepo.CreateUserTable()
 	if err != nil {
-		fmt.Println("Error Initialising User Repository")
+		slog.Error("Error Initialising User Repository")
 		panic(err)
 	}
 }

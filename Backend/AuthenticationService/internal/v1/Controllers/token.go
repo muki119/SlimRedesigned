@@ -2,7 +2,7 @@ package Controllers
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"v1/Helpers/Response"
 	"v1/Helpers/Token"
@@ -23,17 +23,17 @@ func (*Controllers) TokenHandler(res http.ResponseWriter, req *http.Request) err
 	}
 	newRefreshToken, err := Token.Token.CreateRefreshTokenFromClaims(parsedRefreshToken.Claims)
 	if err != nil {
-		log.Println("error in Token.Token.CreateRefreshTokenFromClaims", err)
+		slog.Error("error in Token.Token.CreateRefreshTokenFromClaims", "error", err.Error())
 		return err
 	}
 	userId, err := parsedRefreshToken.Claims.GetSubject()
 	if err != nil {
-		log.Println("error parsing refreshtoken", err)
+		slog.Error("error parsing refreshtoken", "error", err.Error())
 		return err
 	}
 	newAccessToken, err := Token.Token.CreateAccessToken(userId, "/token")
 	if err != nil {
-		log.Println("error in Token.CreateAccessToken: ", err)
+		slog.Error("error in Token.CreateAccessToken: ", "error", err.Error())
 		return err
 	}
 
