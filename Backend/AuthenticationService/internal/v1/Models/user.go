@@ -31,21 +31,19 @@ type User struct {
 	db          *pgxpool.Pool
 }
 
-type UserExistsError struct {
+type ErrUserExists struct {
 	Field   string `json:"field"`
 	Message string `json:"error"`
 }
 
 var (
-	ErrEmailExists    = &UserExistsError{Field: "EMAIL", Message: "email already in use"}
-	ErrUsernameExists = &UserExistsError{Field: "USERNAME", Message: "username already in use"}
-	ErrBothExists     = &UserExistsError{Field: "BOTH", Message: "username and Email already in use"}
+	ErrEmailExists    = &ErrUserExists{Field: "EMAIL", Message: "email already in use"}
+	ErrUsernameExists = &ErrUserExists{Field: "USERNAME", Message: "username already in use"}
+	ErrBothExists     = &ErrUserExists{Field: "BOTH", Message: "username and Email already in use"}
 	ErrUserNotFound   = errors.New("user not found")
 )
 
-var UserExistsErrorPtr *UserExistsError
-
-func (err UserExistsError) Error() string {
+func (err ErrUserExists) Error() string {
 	return err.Message
 }
 
@@ -70,12 +68,6 @@ func (userRepo *UserRepository) CreateUserTable() error {
 	}
 	return nil
 }
-
-//func NewUser() *User {
-//	return &User{
-//		Role: "USER",
-//	}
-//}
 
 func (userRepo *UserRepository) NewUser() *User {
 	return &User{
