@@ -2,15 +2,13 @@ package Routes
 
 import (
 	"net/http"
-	"v1/Controllers"
-	"v1/Middleware"
 )
 
-func InitialiseRoutes(RouteControllers *Controllers.Controllers) *http.ServeMux {
+func (routes *Routes) GetAuthRoutes() *http.ServeMux {
 	var AuthRouter = http.NewServeMux()
-	AuthRouter.HandleFunc("POST /register", Middleware.ErrorHandler(RouteControllers.RegisterHandler))
-	AuthRouter.HandleFunc("POST /login", Middleware.ErrorHandler(RouteControllers.LoginHandler))
-	AuthRouter.HandleFunc("GET /token", Middleware.ErrorHandler(Middleware.CheckUserLoggedIn(RouteControllers.TokenHandler)))
-	AuthRouter.HandleFunc("DELETE /logout", Middleware.ErrorHandler(Middleware.CheckUserLoggedIn(RouteControllers.LogoutHandler)))
+	AuthRouter.HandleFunc("POST /register", routes.Middleware.ErrorHandler(routes.RouteControllers.RegisterHandler))
+	AuthRouter.HandleFunc("POST /login", routes.Middleware.ErrorHandler(routes.RouteControllers.LoginHandler))
+	AuthRouter.HandleFunc("GET /token", routes.Middleware.ErrorHandler(routes.Middleware.CheckUserLoggedIn(routes.RouteControllers.TokenHandler)))
+	AuthRouter.HandleFunc("DELETE /logout", routes.Middleware.ErrorHandler(routes.Middleware.CheckUserLoggedIn(routes.RouteControllers.LogoutHandler)))
 	return AuthRouter
 }

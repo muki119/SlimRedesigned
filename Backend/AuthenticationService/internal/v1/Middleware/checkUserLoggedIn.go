@@ -5,14 +5,13 @@ import (
 	"errors"
 	"net/http"
 	"v1/Helpers/Response"
-	"v1/Helpers/Token"
 )
 
 type requestTokenContextKey string
 
 var RequestTokenContextKey = requestTokenContextKey("token")
 
-func CheckUserLoggedIn(f func(http.ResponseWriter, *http.Request) error) func(http.ResponseWriter, *http.Request) error {
+func (Middleware *Middleware) CheckUserLoggedIn(f func(http.ResponseWriter, *http.Request) error) func(http.ResponseWriter, *http.Request) error {
 	return func(res http.ResponseWriter, req *http.Request) error {
 		//check if user is logged in by verifying jwt signature is verified and has a subject
 		// verify jwt and that its not blocklisted
@@ -24,12 +23,12 @@ func CheckUserLoggedIn(f func(http.ResponseWriter, *http.Request) error) func(ht
 			}
 			return err
 		}
-		parsedRefreshToken, err := Token.Token.ParseRefreshToken(requestRefreshToken.Value)
+		parsedRefreshToken, err := Middleware.TokenHelper.ParseRefreshToken(requestRefreshToken.Value)
 		if err != nil {
 			return err
 		}
 
-		tokenIsBlocked, err := Token.Token.IsBlocklisted(parsedRefreshToken)
+		tokenIsBlocked, err := Middleware.TokenHelper.Blocklist.IsBlocklisted(parsedRefreshToken)
 		if err != nil {
 			return err
 		}

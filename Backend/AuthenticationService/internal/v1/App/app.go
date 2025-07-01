@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"log/slog"
 	"net/http"
@@ -13,40 +12,58 @@ import (
 	"syscall"
 	"v1/Config"
 	"v1/Controllers"
+	"v1/Helpers/Token"
+	"v1/Middleware"
 	"v1/Models"
 	"v1/Routes"
 	"v1/Services"
 	"v1/Utils"
-)
 
-type appConfig struct {
-	httpServer *http.Server
-	dbConfig   *Config.PGDatabase
-}
+	"github.com/redis/go-redis/v9"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
 
 type App struct {
 	Port       string
 	Config     *appConfig
 	Db         *pgxpool.Pool
+	RedisDb    *redis.Client
 	httpServer *http.Server
+}
+type appConfig struct {
+	httpServer  *http.Server
+	dbConfig    *Config.PGDatabase
+	redisConfig *Config.RedisConfig
+	tokenConfig *Token.HelperTokenConfig
 }
 
 type appInterface interface {
 	ListenAndServe() error
 	Init()
+	GenerateRoutes(*Controllers.Controllers, *Middleware.Middleware) *Routes.Routes
 }
 
-// NewApp Creates a new App instance
+// NewApp Creates a default App instance
 func NewApp(ServerPort string) *App {
 	config := &appConfig{
 		httpServer: &http.Server{
 			Addr: fmt.Sprintf(":%s", ServerPort),
 		},
 		dbConfig: &Config.PGDatabase{
-			Host: Utils.Getenv("DB_HOST"),
-			Port: Utils.Getenv("DB_PORT"),
-			User: Utils.Getenv("DB_USER"),
-			Name: Utils.Getenv("DB_NAME"),
+			Host: Utils.MustGetEnv("DB_HOST"),
+			Port: Utils.MustGetEnv("DB_PORT"),
+			User: Utils.MustGetEnv("DB_USER"),
+			Name: Utils.MustGetEnv("DB_NAME"),
+		},
+		redisConfig: &Config.RedisConfig{
+			Addr:     Utils.MustGetEnv("REDIS_HOST"),
+			Password: Utils.MustGetEnv("REDIS_PASSWORD"),
+			DB:       Utils.MustGetEnvInt("REDIS_DB"),
+		},
+		tokenConfig: &Token.HelperTokenConfig{
+			SecretKey:  "JWT_SECRET_KEY",
+			PrivateKey: "JWT_PRIVATE_KEY",
 		},
 	}
 	return &App{
@@ -56,16 +73,20 @@ func NewApp(ServerPort string) *App {
 
 }
 
+func (a *App) GenerateRoutes(RouteControllers *Controllers.Controllers, RouteMiddleware *Middleware.Middleware) *Routes.Routes {
+	return &Routes.Routes{
+		RouteControllers: RouteControllers,
+		Middleware:       RouteMiddleware,
+	}
+}
+
 // Init Connects to database - does all the basic setup of repositories, services,
 // controllers
 func (a *App) Init() {
-
-	// open a new connection to db -- needs to be connected
-	// make a userRepository -- needs init
-	// make a user service with the repository -- just needs instantiation
-	//make a controller with the userService -- needs insantiation
-	// controller should be passes into initialise routes to make routes specific to the Controllers
 	var err error
+	a.RedisDb = a.Config.redisConfig.ConnectToDatabase()               // connect to the redis db
+	TokenHelpers := a.Config.tokenConfig.CreateTokenService(a.RedisDb) // creates the token services the controllers and middleware use
+
 	a.Db, err = a.Config.dbConfig.ConnectToDatabase()
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
@@ -75,14 +96,18 @@ func (a *App) Init() {
 	}
 	userServices := &Services.Services{UserRepository: userRepository} // then the user services
 
+	RouteMiddleware := &Middleware.Middleware{ // create the middleware instance the routes will use
+		TokenHelper: TokenHelpers,
+	}
 	RouteControllers := &Controllers.Controllers{ // and the controllers to be used
 		UserServices: userServices,
+		TokenHelpers: TokenHelpers,
 	}
+	userRoutes := a.GenerateRoutes(RouteControllers, RouteMiddleware)
 	userRepository.InitialiseModels() // initialises the models for the database used.
 
 	serverMux := http.NewServeMux()
-	serverMux.Handle("/api/v1/auth/", http.StripPrefix("/api/v1/auth", Routes.InitialiseRoutes(RouteControllers))) // mounts the routes to the multiplexer
-
+	serverMux.Handle("/api/v1/auth/", http.StripPrefix("/api/v1/auth", userRoutes.GetAuthRoutes())) // mounts the routes to the multiplexer
 	a.Config.httpServer.Handler = serverMux
 }
 

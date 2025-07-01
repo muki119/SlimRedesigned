@@ -9,19 +9,18 @@ import (
 	"v1/Models"
 )
 
-func (controllers *Controllers) RegisterHandler(res http.ResponseWriter, req *http.Request) error {
-	userDetails := controllers.UserServices.UserRepository.NewUser() // stores the user's details to be passed
+func (controllerTools *Controllers) RegisterHandler(res http.ResponseWriter, req *http.Request) error {
+	userDetails := controllerTools.UserServices.UserRepository.NewUser() // stores the user's details to be passed
 	err := json.NewDecoder(req.Body).Decode(&userDetails)
 	if err != nil { // if there's an error decoding
 		log.Println(err)
 		return err
 	}
-	err = controllers.UserServices.RegisterService(userDetails) // will return an error if the user already exists or if there is an issue saving the user
-	if err != nil {                                             // if theres an error regestring the user
-		if errors.As(err, &Models.UserExistsErrorPtr) { // and the error comes from
-			var errorOut *Models.UserExistsError
-			errors.As(err, &errorOut)
-			Response.SendJsonResponse(res, errorOut, http.StatusBadRequest)
+	err = controllerTools.UserServices.RegisterService(userDetails) // will return an error if the user already exists or if there is an issue saving the user
+	if err != nil {
+		var ErrUserExists *Models.ErrUserExists // if theres an error regestring the user
+		if errors.As(err, &ErrUserExists) {     // and the error comes from
+			Response.SendJsonResponse(res, err, http.StatusBadRequest)
 			return nil
 		}
 		return err

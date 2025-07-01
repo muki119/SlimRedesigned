@@ -2,12 +2,13 @@ package Token
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"time"
 )
 
-func (tokenService *HelperStruct) createRefreshToken(userId string, expiresAt *jwt.NumericDate, issuer string) (string, error) { // for auth server use only
+func (tokenService *Helper) createRefreshToken(userId string, expiresAt *jwt.NumericDate, issuer string) (string, error) { // for auth server use only
 	if userId == "" {
 		return "", ErrNoUserId
 	} else if issuer == "" {
@@ -16,7 +17,7 @@ func (tokenService *HelperStruct) createRefreshToken(userId string, expiresAt *j
 		return "", ErrNoExpiry
 	}
 
-	audienceClaim := jwt.ClaimStrings{"localhost:5000"}
+	audienceClaim := jwt.ClaimStrings{"localhost:5000"} // changed to real audience
 	jti := uuid.New().String()
 	if jti == "" {
 		return "", fmt.Errorf("jwt Id could not be generated")
@@ -37,14 +38,14 @@ func (tokenService *HelperStruct) createRefreshToken(userId string, expiresAt *j
 	}
 	return signedToken, nil
 }
-func (tokenService *HelperStruct) CreateLoginRefreshToken(userId string) (string, error) {
+func (tokenService *Helper) CreateLoginRefreshToken(userId string) (string, error) {
 	if userId == "" {
 		return "", ErrNoUserId
 	}
 	expiresAt := jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7))
 	return tokenService.createRefreshToken(userId, expiresAt, "/login")
 }
-func (tokenService *HelperStruct) CreateRefreshTokenFromClaims(tokenClaims jwt.Claims) (string, error) {
+func (tokenService *Helper) CreateRefreshTokenFromClaims(tokenClaims jwt.Claims) (string, error) {
 	if tokenClaims == nil {
 		return "", ErrNoClaims
 	}

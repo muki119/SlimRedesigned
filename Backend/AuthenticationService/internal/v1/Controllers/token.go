@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 	"v1/Helpers/Response"
-	"v1/Helpers/Token"
 	"v1/Middleware"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -15,13 +14,13 @@ var (
 	ErrNoToken = errors.New("no token found")
 )
 
-func (*Controllers) TokenHandler(res http.ResponseWriter, req *http.Request) error {
+func (controllerTools *Controllers) TokenHandler(res http.ResponseWriter, req *http.Request) error {
 	// get a refresh token
 	parsedRefreshToken := req.Context().Value(Middleware.RequestTokenContextKey).(*jwt.Token)
 	if parsedRefreshToken == nil {
 		return ErrNoToken
 	}
-	newRefreshToken, err := Token.Token.CreateRefreshTokenFromClaims(parsedRefreshToken.Claims)
+	newRefreshToken, err := controllerTools.TokenHelpers.CreateRefreshTokenFromClaims(parsedRefreshToken.Claims)
 	if err != nil {
 		slog.Error("error in Token.Token.CreateRefreshTokenFromClaims", "error", err.Error())
 		return err
@@ -31,13 +30,13 @@ func (*Controllers) TokenHandler(res http.ResponseWriter, req *http.Request) err
 		slog.Error("error parsing refreshtoken", "error", err.Error())
 		return err
 	}
-	newAccessToken, err := Token.Token.CreateAccessToken(userId, "/token")
+	newAccessToken, err := controllerTools.TokenHelpers.CreateAccessToken(userId, "/token")
 	if err != nil {
 		slog.Error("error in Token.CreateAccessToken: ", "error", err.Error())
 		return err
 	}
 
-	err = Token.Token.BlockToken(parsedRefreshToken) // add parsed token id to blocked list
+	err = controllerTools.TokenHelpers.Blocklist.BlockToken(parsedRefreshToken) // add parsed token id to blocked list
 	if err != nil {
 		return err
 	}

@@ -1,11 +1,12 @@
 package Token
 
 import (
-	"github.com/golang-jwt/jwt/v5"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
-func (tokenService *HelperStruct) CreateAccessToken(userId string, issuer string) (string, error) { // access token - to be changed often -- rsa for microservices
+func (tokenService *Helper) CreateAccessToken(userId string, issuer string) (string, error) { // access token - to be changed often -- rsa for microservices
 	if userId == "" {
 		return "", ErrNoUserId
 	} else if issuer == "" {

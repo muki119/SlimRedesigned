@@ -3,14 +3,22 @@ package Token
 import (
 	"crypto/rsa"
 	"errors"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 	"log"
 )
 
-var Token = createTokenService()
-
-type HelperStruct struct {
+type Helper struct {
 	PrivateKey   *rsa.PrivateKey
 	SymmetricKey []byte
+	Blocklist    *Blocklist
+}
+
+type helperTokenInterface interface {
+	CreateAccessToken(string, string) (string, error)
+	CreateLoginRefreshToken(string) (string, error)
+	ParseRefreshToken(string) (*jwt.Token, error)
+	CreateRefreshTokenFromClaims(jwt.Claims) (string, error)
 }
 
 var (
@@ -25,18 +33,28 @@ var (
 	ErrNoTokenId      = errors.New("no token id")
 )
 
-func createTokenService() *HelperStruct {
-	symmetricKey, err := getHMACSymmetricKey()
+type HelperTokenConfig struct {
+	//the environment key for the private key
+	PrivateKey string
+	//the environment key for the private key
+	SecretKey string
+}
+
+func (config *HelperTokenConfig) CreateTokenService(db *redis.Client) *Helper {
+	secretKey, err := GetHMACSymmetricKey(config.SecretKey)
 	if err != nil {
 		log.Fatal("Error getting the symmetric key\n", err)
 	}
-	privateKey, err := getRSAPrivateKey()
+	privateKey, err := GetRSAPrivateKey(config.PrivateKey)
 	if err != nil {
 		log.Fatal("error getting the private key", err)
 	}
-	return &HelperStruct{
+	return &Helper{
 		PrivateKey:   privateKey,
-		SymmetricKey: symmetricKey,
+		SymmetricKey: secretKey,
+		Blocklist: &Blocklist{
+			Conn: db,
+		},
 	}
 }
 

@@ -6,31 +6,44 @@ import (
 	"github.com/google/uuid"
 	"testing"
 	"time"
+	"v1/Config"
 	"v1/Helpers/Token"
+	"v1/Utils"
 )
 
 func TestParseRefreshToken(t *testing.T) {
 	userId := uuid.New().String()
 	issuer := "/test"
+
+	TokenBlocklistDB := &Config.RedisConfig{
+		Addr:     Utils.MustGetEnv("REDIS_HOST"),
+		Password: Utils.MustGetEnv("REDIS_PASSWORD"),
+		DB:       1,
+	}
+	TokenConfig := &Token.HelperTokenConfig{
+		SecretKey:  "JWT_SECRET_KEY",
+		PrivateKey: "JWT_PRIVATE_KEY",
+	}
+	TokenHelper := TokenConfig.CreateTokenService(TokenBlocklistDB.ConnectToDatabase())
 	t.Run("AccessTokenShouldFailAsRefreshToken", func(t *testing.T) {
-		accessToken, err := Token.Token.CreateAccessToken(userId, issuer)
+		accessToken, err := TokenHelper.CreateAccessToken(userId, issuer)
 		if err != nil {
 			t.Fatalf("Failed to create access token: %v", err)
 		}
 
-		_, err = Token.Token.ParseRefreshToken(accessToken)
+		_, err = TokenHelper.ParseRefreshToken(accessToken)
 		if err == nil {
 			t.Error("Expected error when parsing access token as refresh token, but got none")
 		}
 	})
 
 	t.Run("ValidRefreshTokenShouldParse", func(t *testing.T) {
-		refreshToken, err := Token.Token.CreateLoginRefreshToken(userId)
+		refreshToken, err := TokenHelper.CreateLoginRefreshToken(userId)
 		if err != nil {
 			t.Fatalf("Failed to create refresh token: %v", err)
 		}
 
-		parsedToken, err := Token.Token.ParseRefreshToken(refreshToken)
+		parsedToken, err := TokenHelper.ParseRefreshToken(refreshToken)
 		if err != nil {
 			t.Fatalf("Failed to parse valid refresh token: %v", err)
 		}
@@ -50,7 +63,7 @@ func TestParseRefreshToken(t *testing.T) {
 	})
 
 	t.Run("RefreshTokenReturnErrorIfNoRefreshToken", func(t *testing.T) {
-		_, err := Token.Token.ParseRefreshToken("")
+		_, err := TokenHelper.ParseRefreshToken("")
 		if err == nil {
 			t.Error("Expected error when parsing refresh token, but got none")
 		}
@@ -65,11 +78,11 @@ func TestParseRefreshToken(t *testing.T) {
 			Issuer:    issuer,
 			ID:        userId,
 		}
-		expiredToken, err := Token.Token.CreateRefreshTokenFromClaims(expiredClaims)
+		expiredToken, err := TokenHelper.CreateRefreshTokenFromClaims(expiredClaims)
 		if err != nil {
 			t.Fatalf("Failed to create refresh token: %v", err)
 		}
-		_, err = Token.Token.ParseRefreshToken(expiredToken)
+		_, err = TokenHelper.ParseRefreshToken(expiredToken)
 		if err == nil {
 			t.Error("Expected error when parsing refresh token, but got none")
 		}

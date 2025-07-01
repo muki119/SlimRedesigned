@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"v1/Helpers/Response"
-	"v1/Helpers/Token"
 	"v1/Models"
 	"v1/Services"
 )
@@ -15,13 +14,13 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-func (controllers *Controllers) LoginHandler(res http.ResponseWriter, req *http.Request) error {
+func (controllerTools *Controllers) LoginHandler(res http.ResponseWriter, req *http.Request) error {
 	var loginReq LoginRequest
 	err := json.NewDecoder(req.Body).Decode(&loginReq)
 	if err != nil {
 		return err
 	}
-	user, err := controllers.UserServices.LoginService(loginReq.Username, loginReq.Password) // should return the id and
+	user, err := controllerTools.UserServices.LoginService(loginReq.Username, loginReq.Password) // should return the id and
 	if err != nil {
 		if errors.Is(err, Models.ErrUserNotFound) {
 			Response.SendJsonResponse(res, &Response.ErrorResponse{Error: err.Error()}, http.StatusNotFound)
@@ -34,11 +33,11 @@ func (controllers *Controllers) LoginHandler(res http.ResponseWriter, req *http.
 		return err
 	}
 	// make refresh token
-	refreshToken, err := Token.Token.CreateLoginRefreshToken(user.Id)
+	refreshToken, err := controllerTools.TokenHelpers.CreateLoginRefreshToken(user.Id)
 	if err != nil {
 		return err
 	}
-	accessToken, err := Token.Token.CreateAccessToken(user.Id, "/login")
+	accessToken, err := controllerTools.TokenHelpers.CreateAccessToken(user.Id, "/login")
 	if err != nil {
 		return err
 	}
