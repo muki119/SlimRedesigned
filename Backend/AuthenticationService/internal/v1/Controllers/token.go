@@ -27,7 +27,7 @@ func (controllerTools *Controllers) TokenHandler(res http.ResponseWriter, req *h
 	}
 	userId, err := parsedRefreshToken.Claims.GetSubject()
 	if err != nil {
-		slog.Error("error parsing refreshtoken", "error", err.Error())
+		slog.Error("error parsing refresh token", "error", err.Error())
 		return err
 	}
 	newAccessToken, err := controllerTools.TokenHelpers.CreateAccessToken(userId, "/token")
