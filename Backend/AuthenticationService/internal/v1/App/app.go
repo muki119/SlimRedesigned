@@ -19,6 +19,8 @@ import (
 	"v1/Services"
 	"v1/Utils"
 
+	"github.com/go-playground/validator/v10"
+
 	"github.com/redis/go-redis/v9"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -91,6 +93,7 @@ func (a *App) Init() {
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
+	dtoValidator := validator.New(validator.WithRequiredStructEnabled())
 	userRepository := &Models.UserRepository{ // sets up the user repository
 		Db: a.Db,
 	}
@@ -102,6 +105,7 @@ func (a *App) Init() {
 	RouteControllers := &Controllers.Controllers{ // and the controllers to be used
 		UserServices: userServices,
 		TokenHelpers: TokenHelpers,
+		Validator:    dtoValidator,
 	}
 	userRoutes := a.GenerateRoutes(RouteControllers, RouteMiddleware)
 	userRepository.InitialiseModels() // initialises the models for the database used.

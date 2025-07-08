@@ -48,14 +48,15 @@ func (err ErrUserExists) Error() string {
 }
 
 func (userRepo *UserRepository) CreateUserTable() error {
+	//password is hashed , set it correctly
 	_, err := userRepo.Db.Exec(Config.DatabaseContext, `
 		CREATE TABLE IF NOT EXISTS users (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			forename VARCHAR(60) NOT NULL,
+			forename VARCHAR(30) NOT NULL,
 			surname VARCHAR(30) NOT NULL,
-			username VARCHAR(30) NOT NULL UNIQUE,
+			username VARCHAR(15) NOT NULL UNIQUE,
 			email VARCHAR(320) NOT NULL UNIQUE,
-			password VARCHAR(100) NOT NULL,
+			password VARCHAR(80) NOT NULL,
 			date_of_birth DATE NOT NULL,
 			date_created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 			last_login TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),

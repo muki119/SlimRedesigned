@@ -3,19 +3,27 @@ package Controllers
 import (
 	"encoding/json"
 	"errors"
-	"log"
+	"github.com/go-playground/validator/v10"
 	"net/http"
 	"v1/Helpers/Response"
 	"v1/Models"
+	"v1/Utils"
+	"v1/dtos"
 )
 
 func (controllerTools *Controllers) RegisterHandler(res http.ResponseWriter, req *http.Request) error {
-	userDetails := controllerTools.UserServices.UserRepository.NewUser() // stores the user's details to be passed
+
+	var userDetails *dtos.RegisterRequest // stores the user's details to be passed
 	err := json.NewDecoder(req.Body).Decode(&userDetails)
 	if err != nil { // if there's an error decoding
-		log.Println(err)
 		return err
 	}
+	if err = controllerTools.Validator.Struct(userDetails); err != nil {
+		err := err.(validator.ValidationErrors)
+		Response.SendJsonResponse(res, &Response.ErrorResponse{Error: Utils.FormatErrors(err)}, http.StatusUnprocessableEntity)
+		return nil
+	}
+
 	err = controllerTools.UserServices.RegisterService(userDetails) // will return an error if the user already exists or if there is an issue saving the user
 	if err != nil {
 		var ErrUserExists *Models.ErrUserExists // if theres an error regestring the user

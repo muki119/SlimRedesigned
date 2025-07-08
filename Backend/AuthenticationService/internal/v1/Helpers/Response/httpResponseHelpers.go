@@ -2,12 +2,13 @@ package Response
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
 )
 
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Error any `json:"error"`
 }
 type SuccessResponse struct {
 	Message string `json:"message"`
@@ -44,7 +45,11 @@ func SendJsonResponse(res http.ResponseWriter, outStruct any, statusCode int) {
 	res.Header().Set("Server", "H26")
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.WriteHeader(statusCode)
-	json.NewEncoder(res).Encode(outStruct)
+	err := json.NewEncoder(res).Encode(outStruct)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 }
 
 func SendCookieResponse(res http.ResponseWriter, cookie *http.Cookie, outStruct any, statusCode int) {
@@ -52,5 +57,9 @@ func SendCookieResponse(res http.ResponseWriter, cookie *http.Cookie, outStruct 
 	res.Header().Set("Server", "H26")
 	res.Header().Set("Content-Type", "application/json; charset=utf-8")
 	res.WriteHeader(statusCode)
-	json.NewEncoder(res).Encode(outStruct)
+	err := json.NewEncoder(res).Encode(outStruct)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 }

@@ -8,9 +8,10 @@ import (
 type UserRepository struct {
 	Db *pgxpool.Pool
 }
+
 type UserRepositoryInterface interface {
 	NewUser() *User
-	CreateUserTable()
+	CreateUserTable() error
 	GetUserByUsername(string) (*User, error)
 	GetUserByEmail(string) (*User, error)
 }
