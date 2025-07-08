@@ -62,8 +62,8 @@ func NewApp(ServerPort string) *App {
 			DB:       Utils.MustGetEnvInt("REDIS_DB"),
 		},
 		tokenConfig: &Token.HelperTokenConfig{
-			SecretKey:  "JWT_SECRET_KEY",
-			PrivateKey: "JWT_PRIVATE_KEY",
+			SecretKey:  Utils.MustGetEnv("JWT_SECRET_KEY"),
+			PrivateKey: Utils.MustGetEnv("JWT_PRIVATE_KEY"),
 		},
 	}
 	return &App{
@@ -107,8 +107,12 @@ func (a *App) Init() {
 	userRepository.InitialiseModels() // initialises the models for the database used.
 
 	serverMux := http.NewServeMux()
-	serverMux.Handle("/api/v1/auth/", http.StripPrefix("/api/v1/auth", userRoutes.GetAuthRoutes())) // mounts the routes to the multiplexer
-	a.Config.httpServer.Handler = serverMux
+	serverMux.Handle("/auth/", http.StripPrefix("/auth", userRoutes.GetAuthRoutes())) // mounts the routes to the multiplexer
+
+	apiVersionMux := http.NewServeMux()
+	apiVersionMux.Handle("/api/v1/", http.StripPrefix("/api/v1", serverMux))
+
+	a.Config.httpServer.Handler = apiVersionMux
 }
 
 func (a *App) ListenAndServe() error {
