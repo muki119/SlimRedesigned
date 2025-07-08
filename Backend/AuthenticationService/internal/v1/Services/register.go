@@ -5,15 +5,16 @@ import (
 	"v1/dtos"
 )
 
-func (userRepo *Services) RegisterService(user *dtos.RegisterRequest) error { // get user data and create a new user // return only error response
+func (userRepo *Services) RegisterService(registerRequest *dtos.RegisterRequest) error { // get user data and create a new user // return only error response
 
 	NewUser := userRepo.UserRepository.NewUser()
-	NewUser.Forename = user.Forename
-	NewUser.Surname = user.Surname
-	NewUser.Username = user.Username
-	NewUser.Email = user.Email
-	NewUser.Password = user.Password
-	NewUser.DateOfBirth = user.DateOfBirth
+
+	NewUser.Forename = registerRequest.Forename
+	NewUser.Surname = registerRequest.Surname
+	NewUser.Username = registerRequest.Username
+	NewUser.Email = registerRequest.Email
+	NewUser.Password = registerRequest.Password
+	NewUser.DateOfBirth = registerRequest.DateOfBirth
 
 	doesUserExist, err := NewUser.UserExists()
 	if doesUserExist {
@@ -22,11 +23,12 @@ func (userRepo *Services) RegisterService(user *dtos.RegisterRequest) error { //
 	if err != nil {
 		return err
 	}
-	out, err := Password.HashPassword(user.Password)
-	user.Password = out
+	out, err := Password.HashPassword(NewUser.Password)
 	if err != nil {
 		return err
 	}
+	NewUser.Password = out
+
 	err = NewUser.SaveUser()
 	if err != nil {
 		return err // return error if there is an issue saving the user
