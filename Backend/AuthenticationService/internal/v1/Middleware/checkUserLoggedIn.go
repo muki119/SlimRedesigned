@@ -33,7 +33,7 @@ func (Middleware *Middleware) CheckUserLoggedIn(f func(http.ResponseWriter, *htt
 			return err
 		}
 		if tokenIsBlocked || !parsedRefreshToken.Valid { // check blocklisted and not valid
-			Response.SendCookieResponse(res, Response.ClearCookie(Response.RefreshTokenName), Response.ErrorResponse{Error: "Token Invalid"}, http.StatusUnauthorized)
+			Response.SendCookieResponse(res, Response.ClearCookie(Response.RefreshTokenName), Response.ErrorResponse{Error: "invalid token"}, http.StatusUnauthorized)
 			return nil
 		}
 		newRequestContext := context.WithValue(req.Context(), RequestTokenContextKey, parsedRefreshToken) // add user id to request context
