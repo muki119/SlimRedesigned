@@ -7,8 +7,8 @@ import (
 )
 
 type FieldError struct {
-	Tag string
-	Msg string
+	Tag string `json:"tag"`
+	Msg string `json:"msg"`
 }
 
 func (fe FieldError) Error() string {
