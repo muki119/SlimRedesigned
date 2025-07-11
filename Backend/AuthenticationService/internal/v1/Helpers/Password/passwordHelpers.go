@@ -1,12 +1,13 @@
 package Password
 
 import (
-	"bytes"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
-	"golang.org/x/crypto/scrypt"
 	"strings"
+
+	"golang.org/x/crypto/scrypt"
 )
 
 const (
@@ -55,26 +56,25 @@ func ComparePassword(plaintextPassword string, hashedPassword string) (bool, err
 	if len(hashedPassword) < MinimumPasswordLength {
 		return false, ErrInvalidHashedPassword
 	}
-	splitPassword := strings.Split(hashedPassword, "$")
-	if len(splitPassword) != 2 {
+	splitHashedPassword := strings.Split(hashedPassword, "$") // split the hashed password to get hash and password ciphertext
+	if len(splitHashedPassword) != 2 {
 		return false, ErrInvalidHashedPassword
 	}
-	saltInBytes, err := base64.RawStdEncoding.DecodeString(splitPassword[0])
+	bytesSalt, err := base64.RawStdEncoding.DecodeString(splitHashedPassword[0])
+	if err != nil {
+		return false, err // return that it's not equal and that theres an error
+	}
+
+	bytesHashedPasswordValue, err := base64.RawStdEncoding.DecodeString(splitHashedPassword[1]) // the stored hashed passwo
 	if err != nil {
 		return false, err
 	}
 
-	var hashedPasswordInBytes []byte
-	hashedPasswordInBytes, err = base64.RawStdEncoding.DecodeString(splitPassword[1])
+	bytesPlaintextPassword := []byte(plaintextPassword)
+	bytesHashedPlaintextPassword, err := scrypt.Key(bytesPlaintextPassword, bytesSalt, n, r, p, keyLength) // hashing the plaintext password
 	if err != nil {
-		return false, err
+		return false, err // return that it's not equal and that theres an error
 	}
-	passwordInBytes := []byte(plaintextPassword)
-
-	hashedIncomingPasswordInBytes, err := scrypt.Key(passwordInBytes, saltInBytes, n, r, p, keyLength)
-	if err != nil {
-		return false, err // return that its not equal and that
-	}
-	return bytes.Equal(hashedPasswordInBytes, hashedIncomingPasswordInBytes), nil
+	return subtle.ConstantTimeCompare(bytesHashedPlaintextPassword, bytesHashedPasswordValue) == 1, nil
 
 }
