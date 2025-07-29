@@ -1,0 +1,280 @@
+openapi: '3.0.3'
+info:
+  title: Authentication Service API
+  description: API for user authentication and registration
+  version: '1.0'
+  contact:
+    name: Mugagga Kimera
+    email: mugagga.kimera04@gmail.com
+    url: https://github.com/muki119
+servers:
+  - url: http://localhost:2556/api/v1/auth
+    description: Local development server
+
+
+
+paths:
+  /register:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                forename:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+                surname:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+                username:
+                  type: string
+                  minLength: 4
+                  maxLength: 15
+                email:
+                  type: string
+                  minLength: 3
+                  maxLength: 320
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 96
+                date_of_birth:
+                  type: string
+                  format: date-time
+                  description: The user's date of birth in RFC3339 format (YYYY-MM-DDThh:mm:ss±hh:mm)
+              required:
+                - forename
+                - surname
+                - username
+                - email
+                - password
+                - date_of_birth
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User registered successfully
+        '400':
+          description: Bad request, validation error from service
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field:
+                    type: string
+                    example: email
+                  error:
+                    type: string
+                    example: email already exists
+        '422':
+          description: Unprocessable entity, validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/422Error'
+
+
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500Error'
+  /login:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  minLength: 4
+                  maxLength: 15
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 96
+              required:
+                - username
+                - password
+      responses:
+        200:
+          description: New response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "successfully logged in"
+                  token:
+                    type: string
+                    description: "The initial access token given to the user"
+          headers:
+            Set-Cookie:
+                  schema:
+                    type: string
+                    description: "The refresh token"
+                    example: "refresh_token=abcd123; Path=/; HttpOnly; SameSite=..."
+        '422':
+          description: Unprocessable entity, validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/422Error'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "user not found"
+
+        401:
+          description: Invalid user credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "invalid credentials"
+
+
+        500:
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500Error'
+  /token:
+    get:
+      responses:
+        200:
+          description: "Token refreshed successfully"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "token refreshed successfully"
+                  token:
+                    type: string
+                    description: "The new access token given to the user"
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                description: "The new refresh token"
+                example: "refresh_token=abcd123; Path=/; HttpOnly; SameSite=..."
+        401:
+          description: "Invalid refresh token"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401Error'
+          headers:
+            Set-Cookie:
+              schema:
+                $ref: '#/components/schemas/401ErrorHeaders'
+        500:
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500Error'
+  /logout:
+    delete:
+      responses:
+        200:
+          description: "successfully logged the user out"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "successfully logged out"
+          headers:
+            Set-Cookie:
+              schema:
+                $ref: '#/components/schemas/401ErrorHeaders'
+        401:
+          description: "Invalid refresh token"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/401Error'
+          headers:
+            Set-Cookie:
+              schema:
+                $ref: '#/components/schemas/401ErrorHeaders'
+        500:
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/500Error'
+
+components:
+  schemas:
+    500Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Internal server error"
+
+    401Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "invalid token"
+    401ErrorHeaders:
+      type: object
+      properties:
+        Set-Cookie:
+          type: string
+          description: "The removes the refresh token"
+          example: "refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly"
+    
+    422Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            field:
+              type: array
+              items:
+                type: object
+                properties:
+                  tag:
+                    type: string
+                    example: required
+                  msg:
+                    type: string
+                    example: This field is required
