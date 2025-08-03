@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 
@@ -53,7 +54,11 @@ type appInterface interface {
 func NewApp(ServerPort string) *App {
 	config := &appConfig{
 		httpServer: &http.Server{
-			Addr: fmt.Sprintf(":%s", ServerPort),
+			Addr:           fmt.Sprintf(":%s", ServerPort),
+			ReadTimeout:    12 * time.Second,
+			WriteTimeout:   12 * time.Second,
+			IdleTimeout:    60 * time.Second,
+			MaxHeaderBytes: 1 << 20,
 		},
 		dbConfig: &Config.PGDatabase{
 			Host:    Utils.MustGetEnv("DB_HOST"),
