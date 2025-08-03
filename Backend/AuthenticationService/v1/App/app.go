@@ -114,7 +114,7 @@ func (a *App) Init() {
 	userRepository.InitialiseModels() // initialises the models for the database used.
 
 	serverMux := http.NewServeMux()
-	serverMux.Handle("/auth/", http.StripPrefix("/auth", userRoutes.GetAuthRoutes())) // mounts the routes to the multiplexer
+	serverMux.Handle("/auth/", http.StripPrefix("/auth", RouteMiddleware.Cors(userRoutes.GetAuthRoutes()))) // mounts the routes to the multiplexer
 
 	apiVersionMux := http.NewServeMux()
 	apiVersionMux.Handle("/api/v1/", http.StripPrefix("/api/v1", serverMux))
