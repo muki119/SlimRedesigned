@@ -15,7 +15,7 @@ func (fe FieldError) Error() string {
 	return fe.Msg
 }
 
-func FormatErrors(errs validator.ValidationErrors) *map[string][]*FieldError {
+func FormatValidationErrors(errs validator.ValidationErrors) *map[string][]*FieldError {
 	errorMap := make(map[string][]*FieldError)
 	for _, fieldError := range errs {
 		errorMap[fieldError.Field()] = append(errorMap[fieldError.Field()], generateValidationErrors(fieldError))
@@ -43,6 +43,16 @@ func generateValidationErrors(fieldError validator.FieldError) *FieldError {
 		return &FieldError{
 			Tag: fieldError.Tag(),
 			Msg: "value is not a valid email address",
+		}
+	case "alpha":
+		return &FieldError{
+			Tag: fieldError.Tag(),
+			Msg: "value must contain only alphabetic characters",
+		}
+	case "alphanum":
+		return &FieldError{
+			Tag: fieldError.Tag(),
+			Msg: "value must contain only alphanumeric characters",
 		}
 	default:
 		return &FieldError{

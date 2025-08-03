@@ -20,7 +20,7 @@ func (controllerTools *Controllers) RegisterHandler(res http.ResponseWriter, req
 	}
 	if err = controllerTools.Validator.Struct(userDetails); err != nil {
 		err := err.(validator.ValidationErrors)
-		Response.SendJsonResponse(res, &Response.ErrorResponse{Error: Utils.FormatErrors(err)}, http.StatusUnprocessableEntity)
+		Response.SendJsonResponse(res, &Response.ErrorResponse{Error: Utils.FormatValidationErrors(err)}, http.StatusUnprocessableEntity)
 		return nil
 	}
 

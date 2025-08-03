@@ -22,7 +22,7 @@ func (controllerTools *Controllers) LoginHandler(res http.ResponseWriter, req *h
 
 	if err = controllerTools.Validator.Struct(loginReq); err != nil {
 		err := err.(validator.ValidationErrors)
-		Response.SendJsonResponse(res, &Response.ErrorResponse{Error: Utils.FormatErrors(err)}, http.StatusUnprocessableEntity)
+		Response.SendJsonResponse(res, &Response.ErrorResponse{Error: Utils.FormatValidationErrors(err)}, http.StatusUnprocessableEntity)
 		return nil
 	}
 	user, err := controllerTools.UserServices.LoginService(loginReq.Username, loginReq.Password) // should return the id and
