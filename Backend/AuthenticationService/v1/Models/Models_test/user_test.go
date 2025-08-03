@@ -10,10 +10,11 @@ import (
 // test if save user is all good
 func TestSaveUser(t *testing.T) {
 	testDBConfig := Config.PGDatabase{
-		Host: os.Getenv("DB_HOST"),
-		Port: os.Getenv("DB_PORT"),
-		User: os.Getenv("DB_USER"),
-		Name: os.Getenv("DB_TEST_NAME"),
+		Host:    os.Getenv("DB_HOST"),
+		Port:    os.Getenv("DB_PORT"),
+		User:    os.Getenv("DB_USER"),
+		Name:    os.Getenv("DB_TEST_NAME"),
+		Timeout: os.Getenv("DB_TIMEOUT"),
 	}
 	testDb, err := testDBConfig.ConnectToDatabase()
 	testUserRepo := Models.UserRepository{Db: testDb}

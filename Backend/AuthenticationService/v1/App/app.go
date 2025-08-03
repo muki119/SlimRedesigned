@@ -56,10 +56,11 @@ func NewApp(ServerPort string) *App {
 			Addr: fmt.Sprintf(":%s", ServerPort),
 		},
 		dbConfig: &Config.PGDatabase{
-			Host: Utils.MustGetEnv("DB_HOST"),
-			Port: Utils.MustGetEnv("DB_PORT"),
-			User: Utils.MustGetEnv("DB_USER"),
-			Name: Utils.MustGetEnv("DB_NAME"),
+			Host:    Utils.MustGetEnv("DB_HOST"),
+			Port:    Utils.MustGetEnv("DB_PORT"),
+			User:    Utils.MustGetEnv("DB_USER"),
+			Name:    Utils.MustGetEnv("DB_NAME"),
+			Timeout: Utils.MustGetEnv("DB_TIMEOUT"),
 		},
 		redisConfig: &Config.RedisBlocklistConfig{
 			Addr:     Utils.MustGetEnv("REDIS_HOST"),
