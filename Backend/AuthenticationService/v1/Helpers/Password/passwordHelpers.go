@@ -28,7 +28,7 @@ var (
 )
 
 func HashPassword(plaintextPassword string) (string, error) {
-	if len(plaintextPassword) < MinimumPasswordLength && len(plaintextPassword) > MaximumPasswordLength {
+	if len(plaintextPassword) < MinimumPasswordLength || len(plaintextPassword) > MaximumPasswordLength {
 		return "", ErrPasswordMinLength
 	}
 	salt := make([]byte, 16) // the salt to use in bytes
