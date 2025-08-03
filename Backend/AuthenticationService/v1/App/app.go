@@ -39,7 +39,7 @@ type App struct {
 type appConfig struct {
 	httpServer  *http.Server
 	dbConfig    *Config.PGDatabase
-	redisConfig *Config.RedisConfig
+	redisConfig *Config.RedisBlocklistConfig
 	tokenConfig *Token.HelperTokenConfig
 }
 
@@ -61,7 +61,7 @@ func NewApp(ServerPort string) *App {
 			User: Utils.MustGetEnv("DB_USER"),
 			Name: Utils.MustGetEnv("DB_NAME"),
 		},
-		redisConfig: &Config.RedisConfig{
+		redisConfig: &Config.RedisBlocklistConfig{
 			Addr:     Utils.MustGetEnv("REDIS_HOST"),
 			Password: Utils.MustGetEnv("REDIS_PASSWORD"),
 			DB:       Utils.MustGetEnvInt("REDIS_DB"),
