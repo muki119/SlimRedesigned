@@ -5,24 +5,25 @@ import (
 	"AuthenticationService/v1/Helpers/Token"
 	"AuthenticationService/v1/Utils"
 	"errors"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	"testing"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 func TestParseRefreshToken(t *testing.T) {
 	userId := uuid.New().String()
 	issuer := "/test"
 
-	TokenBlocklistDB := &Config.RedisConfig{
+	TokenBlocklistDB := &Config.RedisBlocklistConfig{
 		Addr:     Utils.MustGetEnv("REDIS_HOST"),
 		Password: Utils.MustGetEnv("REDIS_PASSWORD"),
 		DB:       1,
 	}
 	TokenConfig := &Token.HelperTokenConfig{
-		SecretKey:  "JWT_SECRET_KEY",
-		PrivateKey: "JWT_PRIVATE_KEY",
+		SecretKey:  Utils.MustGetEnv("JWT_SECRET_KEY"),
+		PrivateKey: Utils.MustGetEnv("JWT_PRIVATE_KEY"),
 	}
 	TokenHelper := TokenConfig.CreateTokenService(TokenBlocklistDB.ConnectToDatabase())
 	t.Run("AccessTokenShouldFailAsRefreshToken", func(t *testing.T) {
