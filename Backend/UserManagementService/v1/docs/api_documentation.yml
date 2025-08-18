@@ -1,0 +1,10 @@
+openapi: "3.0.3"
+info: 
+  title: User Management Service API
+  contact:
+    name: Mugagga Kimera
+    email: mugagga.kimera04@gmail.com
+  description: A Rest api for managing user profiles and connections. Uses Go std http lib and redis streams for inter service communication.
+  version: 1.0.0
+paths:
+  
