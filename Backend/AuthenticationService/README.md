@@ -83,8 +83,14 @@ This Microservice handles User Authentication , token and session Management
 
 For full api endpoint analysis, look at the ```api_documentation.yml``` file located in the ```/docs``` directory of each api version. 
 
-## Future additions.
+## Near Future additions.
 - Message Broker implementation for inter-service communication (Kafka or Redis Streams).
 - Account deletion.
 - Account Information Updating.
 - The password hash output string will store the configurations used to create the hash.
+- Health Checks.
+
+## Should Adds. 
+- [Jwt fingerprinting](https://g-booking.medium.com/jwt-fingerprint-tokens-af56215bb19a)
+- Passkeys.
+- 2fa.
