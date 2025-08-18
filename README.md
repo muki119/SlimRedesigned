@@ -1,2 +1,2 @@
 # SlimRedesigned
-A slim resedign using Postgres,GoLang,React and NodeJs
+A slim redesign using Postgres,GoLang,React and NodeJs
