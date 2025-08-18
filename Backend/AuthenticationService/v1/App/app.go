@@ -61,11 +61,12 @@ func NewApp(ServerPort string) *App {
 			MaxHeaderBytes: 1 << 20,
 		},
 		dbConfig: &Config.PGDatabase{
-			Host:    Utils.MustGetEnv("DB_HOST"),
-			Port:    Utils.MustGetEnv("DB_PORT"),
-			User:    Utils.MustGetEnv("DB_USER"),
-			Name:    Utils.MustGetEnv("DB_NAME"),
-			Timeout: Utils.MustGetEnv("DB_TIMEOUT"),
+			Host:     Utils.MustGetEnv("DB_HOST"),
+			Port:     Utils.MustGetEnv("DB_PORT"),
+			User:     Utils.MustGetEnv("DB_USER"),
+			Name:     Utils.MustGetEnv("DB_NAME"),
+			Password: Utils.MustGetEnv("DB_PASSWORD"),
+			Timeout:  Utils.MustGetEnv("DB_TIMEOUT"),
 		},
 		redisConfig: &Config.RedisBlocklistConfig{
 			Addr:     Utils.MustGetEnv("REDIS_HOST"),
