@@ -6,7 +6,7 @@ import (
 )
 
 type StreamServices struct {
-	Stream         *redis.Client
+	Connection     *redis.Client
 	UserRepository *models.UserRepository
 	// needs a redis streams connection
 	// or a streams abstraction to only do the acrions we need
