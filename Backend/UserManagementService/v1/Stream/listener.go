@@ -10,7 +10,7 @@ import (
 )
 
 // performs the actual handling of the event creates and manages the timeout context.
-func (eventBus *StreamsEventBus) handleFunc(f EventHandler, data any) error {
+func (eventBus *StreamsEventBus) handleFunc(f Handler, data any) error {
 	timeoutCtx, cancel := context.WithTimeout(eventBus.ctx, eventBus.Timeout)
 	errChan := make(chan error, 1) // error channel
 	defer cancel()
@@ -54,7 +54,7 @@ func (eventBus *StreamsEventBus) processPendingMessages() error {
 	for stream := range eventBus.streamTable {
 		messages, _, err := eventBus.Connection.XAutoClaim(eventBus.ctx, &redis.XAutoClaimArgs{ // claims about 100 claims from any
 			Stream:   stream,
-			Count:    100,
+			Count:    eventBus.MaxCount,
 			MinIdle:  0,
 			Consumer: eventBus.ConsumerName,
 			Start:    "0-0",
@@ -73,7 +73,7 @@ func (eventBus *StreamsEventBus) processPendingMessages() error {
 //
 // O(n*m) operation where n is the amount of streams and m is the maximum amount of messages in each stream.
 func (eventBus *StreamsEventBus) listen() {
-	StreamsArr := make([]string, (len(eventBus.streamTable) * 2))
+	StreamsArr := make([]string, len(eventBus.streamTable)*2)
 	for stream := range eventBus.streamTable {
 		StreamsArr = append(StreamsArr, stream, ">")
 	}
@@ -85,7 +85,7 @@ func (eventBus *StreamsEventBus) listen() {
 				Streams:  StreamsArr,
 				Group:    eventBus.ConsumerGroup,
 				Consumer: eventBus.ConsumerName,
-				Count:    1,
+				Count:    eventBus.MaxCount,
 				Block:    2 * time.Second, // to prevent indefinite blocking
 			}).Result()
 
@@ -109,6 +109,7 @@ func (eventBus *StreamsEventBus) listen() {
 
 func (eventBus *StreamsEventBus) Listen() {
 	eventBus.waitGroup.Add(1) // wait group for graceful close
+
 	go func() {
 		defer eventBus.waitGroup.Done()
 		eventBus.listen()
