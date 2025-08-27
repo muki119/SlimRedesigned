@@ -29,12 +29,14 @@ type AppConfig struct {
 	CacheConfig        *config.RedisCache
 	StreamConfig       *config.RedisStream
 	TokenConfig        *token.Config
+	EventBusConfig     *Stream.EventBusConfig
 }
 type App struct {
 	HttpServer *http.Server
 	Db         *pgxpool.Pool
 	RedisCache *redis.Client
 	Stream     *redis.Client
+	EventBus   *Stream.StreamsEventBus
 	Config     *AppConfig
 }
 
@@ -61,6 +63,12 @@ func DefaultAppConfig() *AppConfig {
 		},
 		TokenConfig: &token.Config{
 			PublicKeyPath: Utils.MustGetEnv("PUBLIC_KEY_PATH"),
+		},
+		EventBusConfig: &Stream.EventBusConfig{
+			ConsumerName:  Utils.MustGetEnv("EVENT_BUS_CONSUMER_NAME"),
+			ConsumerGroup: Utils.MustGetEnv("EVENT_BUS_CONSUMER_GROUP"),
+			MaxCount:      int64(Utils.MustGetEnvInt("EVENT_BUS_MAX_COUNT")),
+			Timeout:       time.Duration(Utils.MustGetEnvInt("EVENT_BUS_TIMEOUT")),
 		},
 	}
 }
@@ -105,6 +113,9 @@ func (app *App) initialise() error {
 		IdleTimeout:    60 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+
+	app.Config.EventBusConfig.Connection = app.Stream        // adds the stream connection
+	app.EventBus = app.Config.EventBusConfig.NewFromConfig() // creates New Event bus instance
 
 	serverMux := http.NewServeMux()
 	serverMux.Handle("/user/api/v1/", http.StripPrefix("/user/api/v1", userRoutes.GetUserRoutes()))
