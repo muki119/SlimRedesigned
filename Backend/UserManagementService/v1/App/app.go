@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 	config "v1/Config"
 	controllers "v1/Controllers"
@@ -114,9 +115,9 @@ func (app *App) Start() {
 	closedChan := make(chan bool)
 	go func() {
 		// listen for a sigint or something
-		closeSignal := make(chan os.Signal, 1)            // make a signal
-		signal.Notify(closeSignal, os.Interrupt, os.Kill) // signal is changed when theres a interruption
-		<-closeSignal                                     // wait until change in signal
+		closeSignal := make(chan os.Signal, 1)                                     // make a signal
+		signal.Notify(closeSignal, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT) // signal is changed when theres a interruption
+		<-closeSignal                                                              // wait until change in signal
 		if err := app.HttpServer.Shutdown(context.Background()); err != nil {
 			slog.Error(err.Error())
 		}
