@@ -12,7 +12,7 @@ import (
 // performs the actual handling of the event creates and manages the timeout context.
 func (eventBus *StreamsEventBus) handleFunc(f Handler, data any) error {
 	timeoutCtx, cancel := context.WithTimeout(eventBus.ctx, eventBus.Timeout)
-	errChan := make(chan error, 1) // error channel
+	errChan := make(chan error) // error channel
 	defer cancel()
 	go func() {
 		errChan <- f(timeoutCtx, data)
@@ -29,7 +29,7 @@ func (eventBus *StreamsEventBus) handleFunc(f Handler, data any) error {
 }
 
 func (eventBus *StreamsEventBus) processMessages(stream string, messages []redis.XMessage) { // blocking
-	for _, message := range messages {                                                       // iterates through consumers incoming messages
+	for _, message := range messages { // iterates through consumers incoming messages
 		if err := eventBus.maxConcurrentSem.Acquire(eventBus.ctx, 1); err != nil {
 			slog.Error(err.Error())
 			continue
@@ -107,11 +107,19 @@ func (eventBus *StreamsEventBus) listen() {
 
 }
 
-func (eventBus *StreamsEventBus) Listen() {
+func (eventBus *StreamsEventBus) Listen() chan error {
 	eventBus.waitGroup.Add(1) // wait group for graceful close
-
+	errChan := make(chan error)
 	go func() {
-		defer eventBus.waitGroup.Done()
+		defer func() {
+			eventBus.waitGroup.Done()
+			close(errChan)
+		}()
+		if err := eventBus.initialize(); err != nil {
+			errChan <- err
+			return
+		}
 		eventBus.listen()
 	}()
+	return errChan // returning an error channel because function needs to be concurrent
 }

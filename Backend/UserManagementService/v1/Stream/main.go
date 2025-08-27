@@ -70,7 +70,7 @@ func (eventBus *StreamsEventBus) StreamHandler(stream string, handlerFunc Handle
 }
 
 // Initialize Joins all streams and consumer groups , and removes some pending messages in all streams associated under the consumer group
-func (eventBus *StreamsEventBus) Initialize() error {
+func (eventBus *StreamsEventBus) initialize() error {
 	for stream := range eventBus.streamTable { // create all the groups for all the streams
 		_, err := eventBus.Connection.XGroupCreateMkStream(eventBus.ctx, stream, eventBus.ConsumerGroup, "$").Result()
 		if err != nil && err.Error() != "BUSYGROUP" {
