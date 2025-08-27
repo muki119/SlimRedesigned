@@ -16,6 +16,7 @@ import (
 	models "v1/Models"
 	routes "v1/Routes"
 	userservices "v1/Services/user_services"
+	"v1/Stream"
 	"v1/Utils"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -71,24 +72,24 @@ func (ac *AppConfig) NewApp() *App {
 	}
 }
 
-func (app *App) initialise() {
+func (app *App) initialise() error {
 	// all system structs
 	var err error
 	app.Db, err = app.Config.UserDatabaseConfig.ConnectToDatabase()
 	if err != nil {
-		// return error or slog
+		return err
 	}
 	app.RedisCache, err = app.Config.CacheConfig.Connect()
 	if err != nil {
-
+		return err
 	}
 	app.Stream, err = app.Config.StreamConfig.Connect()
 	if err != nil {
-
+		return err
 	}
 	tokenHelper, err := app.Config.TokenConfig.NewTokenHelper()
 	if err != nil {
-
+		return err
 	}
 
 	UserRepository := &models.UserRepository{DatabaseConn: app.Db}
@@ -109,8 +110,10 @@ func (app *App) initialise() {
 	serverMux.Handle("/user/api/v1/", http.StripPrefix("/user/api/v1", userRoutes.GetUserRoutes()))
 
 	// all listen and serve operations
+	return nil
 }
-func (app *App) Start() {
+
+func (app *App) Start() error {
 	// start app and start a listener thread for graaceful shutdown
 	closedChan := make(chan bool)
 	go func() {
@@ -121,11 +124,27 @@ func (app *App) Start() {
 		if err := app.HttpServer.Shutdown(context.Background()); err != nil {
 			slog.Error(err.Error())
 		}
+		if err := app.EventBus.Close(); err != nil {
+			slog.Error(err.Error())
+		}
 		close(closedChan)
 
 	}()
-	app.HttpServer.ListenAndServe()
-	<-closedChan
-	fmt.Println("Application stopped")
-	os.Exit(0)
+	if err := app.initialise(); err != nil {
+		return err
+	}
+
+	err := app.HttpServer.ListenAndServe()
+	if err != nil {
+		return err
+	}
+	eventBusErrorChan := app.EventBus.Listen() // starts the event bus for the streams -- only returns error
+	select {
+	case <-closedChan: // if the application is being closed
+		fmt.Println("Application stopped")
+		return nil
+	case err := <-eventBusErrorChan: // if the eventbus Failed somewhere -- only returns error if it exists , no nulls
+		return err
+	}
+
 }
