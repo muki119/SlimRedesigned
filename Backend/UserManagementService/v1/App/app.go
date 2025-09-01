@@ -15,8 +15,8 @@ import (
 	middleware "v1/Middleware"
 	models "v1/Models"
 	routes "v1/Routes"
+	streams "v1/Services/Streams"
 	userservices "v1/Services/user_services"
-	"v1/Stream"
 	"v1/Utils"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -29,14 +29,14 @@ type AppConfig struct {
 	CacheConfig        *config.RedisCache
 	StreamConfig       *config.RedisStream
 	TokenConfig        *token.Config
-	EventBusConfig     *Stream.EventBusConfig
+	EventBusConfig     *seb.EventBusConfig
 }
 type App struct {
 	HttpServer *http.Server
 	Db         *pgxpool.Pool
 	RedisCache *redis.Client
 	Stream     *redis.Client
-	EventBus   *Stream.StreamsEventBus
+	EventBus   *seb.StreamsEventBus
 	Config     *AppConfig
 }
 
@@ -64,7 +64,7 @@ func DefaultAppConfig() *AppConfig {
 		TokenConfig: &token.Config{
 			PublicKeyPath: Utils.MustGetEnv("PUBLIC_KEY_PATH"),
 		},
-		EventBusConfig: &Stream.EventBusConfig{
+		EventBusConfig: &seb.EventBusConfig{
 			ConsumerName:  Utils.MustGetEnv("EVENT_BUS_CONSUMER_NAME"),
 			ConsumerGroup: Utils.MustGetEnv("EVENT_BUS_CONSUMER_GROUP"),
 			MaxCount:      int64(Utils.MustGetEnvInt("EVENT_BUS_MAX_COUNT")),
